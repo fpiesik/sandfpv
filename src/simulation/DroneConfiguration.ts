@@ -20,6 +20,22 @@ const FIELDS: ReadonlyArray<{
     unit: "N",
   },
   {
+    key: "minMotorThrottle",
+    label: "Minimaler Motor-Throttle",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    unit: "0–1",
+  },
+  {
+    key: "maxMotorThrottle",
+    label: "Maximaler Motor-Throttle",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    unit: "0–1",
+  },
+  {
     key: "linearDrag",
     label: "Linearer Widerstand",
     min: 0,
@@ -103,7 +119,7 @@ export function loadDroneConfiguration(
         Number.isFinite(config[key]) &&
         config[key] >= min &&
         config[key] <= max,
-    )
+    ) && config.minMotorThrottle <= config.maxMotorThrottle
       ? config
       : { ...DEFAULT_DRONE_CONFIG };
   } catch {
@@ -149,6 +165,16 @@ export class DroneConfigurationPanel {
     const config = Object.fromEntries(
       FIELDS.map(({ key }) => [key, Number(data.get(key))]),
     ) as unknown as DroneConfig;
+    if (config.minMotorThrottle > config.maxMotorThrottle) {
+      const maximum = (event.target as HTMLFormElement).elements.namedItem(
+        "maxMotorThrottle",
+      ) as HTMLInputElement;
+      maximum.setCustomValidity(
+        "Der maximale Motor-Throttle muss mindestens dem minimalen entsprechen.",
+      );
+      maximum.reportValidity();
+      return;
+    }
     this.drone.configure(config);
     this.storage.setItem(DRONE_CONFIGURATION_KEY, JSON.stringify(config));
     this.root.setAttribute("hidden", "");

@@ -5,6 +5,8 @@ import { applyRateCurve, RateController } from "./RateController";
 export interface DroneConfig {
   mass: number;
   maxThrust: number;
+  minMotorThrottle: number;
+  maxMotorThrottle: number;
   linearDrag: number;
   angularDrag: number;
   motorResponseTime: number;
@@ -22,6 +24,8 @@ export interface DroneConfig {
 export const DEFAULT_DRONE_CONFIG: Readonly<DroneConfig> = {
   mass: 1,
   maxThrust: 20,
+  minMotorThrottle: 0,
+  maxMotorThrottle: 1,
   linearDrag: 0.2,
   angularDrag: 0.08,
   motorResponseTime: 0.12,
@@ -47,9 +51,10 @@ export interface DronePose {
   rotation: RAPIER.Rotation;
 }
 
-/** A deliberately small rigid-body flight model. Attitude control is added later. */
+/** A deliberately small rigid-body flight model with body-rate attitude control. */
 export class Drone {
   readonly body: RAPIER.RigidBody;
+  private readonly collider: RAPIER.Collider;
   private motorThrottle = 0;
   private activeConfig: DroneConfig;
   private readonly rateController = new RateController();
@@ -76,11 +81,13 @@ export class Drone {
           initialPose.position.z,
         )
         .setRotation(initialPose.rotation)
-        .setAdditionalMass(config.mass)
         .setCanSleep(false),
     );
-    world.createCollider(
-      RAPIER.ColliderDesc.cuboid(0.28, 0.08, 0.28).setDensity(0),
+    // Let the collider derive both mass and angular inertia from its shape.
+    // An additional point mass gives Rapier no useful inertia tensor, making
+    // an otherwise dynamic drone effectively unable to roll, pitch, or yaw.
+    this.collider = world.createCollider(
+      RAPIER.ColliderDesc.cuboid(0.28, 0.08, 0.28).setMass(config.mass),
       this.body,
     );
   }
@@ -99,7 +106,7 @@ export class Drone {
 
   configure(config: Readonly<DroneConfig>): void {
     this.activeConfig = { ...config };
-    this.body.setAdditionalMass(config.mass, true);
+    this.collider.setMass(config.mass);
   }
 
   update(
@@ -115,7 +122,10 @@ export class Drone {
     // physics tick instead of accidentally accumulating thrust and drag.
     this.body.resetForces(false);
     this.body.resetTorques(false);
-    const targetThrottle = Math.min(1, Math.max(0, throttle));
+    const command = Math.min(1, Math.max(0, throttle));
+    const targetThrottle =
+      this.config.minMotorThrottle +
+      command * (this.config.maxMotorThrottle - this.config.minMotorThrottle);
     const response =
       this.config.motorResponseTime <= 0
         ? 1
