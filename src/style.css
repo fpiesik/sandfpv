@@ -70,6 +70,21 @@ canvas {
   cursor: pointer;
 }
 
+.reset-button {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 12.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #8f9c91;
+  color: #d6ddd7;
+  background: rgb(10 14 11 / 88%);
+  font:
+    0.65rem ui-monospace,
+    monospace;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
 .wizard-layer {
   position: fixed;
   z-index: 5;
