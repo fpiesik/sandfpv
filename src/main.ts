@@ -34,7 +34,12 @@ async function start(): Promise<void> {
   document
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
-  const { world, cube } = await createPhysicsWorld();
+  const { world, drone } = await createPhysicsWorld();
+  const reset = (): void => drone.reset();
+  document.querySelector("#reset")?.addEventListener("click", reset);
+  addEventListener("keydown", (event) => {
+    if (event.code === "KeyR" && !event.repeat) reset();
+  });
   const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
@@ -43,15 +48,21 @@ async function start(): Promise<void> {
     gamepadInput.update();
     keyboardInput.update();
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
+      const gamepadControls = gamepadInput.read();
+      const keyboardControls = keyboardInput.read();
+      drone.update(
+        Math.max(gamepadControls.throttle, keyboardControls.throttle),
+        stepSeconds,
+      );
       world.timestep = stepSeconds;
       world.step();
     });
     previousTime = time;
 
-    const position = cube.body.translation();
-    const rotation = cube.body.rotation();
-    view.cube.position.set(position.x, position.y, position.z);
-    view.cube.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    const position = drone.body.translation();
+    const rotation = drone.body.rotation();
+    view.drone.position.set(position.x, position.y, position.z);
+    view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
     view.render();
     requestAnimationFrame(frame);
   };
