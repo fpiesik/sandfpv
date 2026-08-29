@@ -19,6 +19,7 @@
         <strong>SAND<span>FPV</span></strong>
         <small>PHYSICS · 120 HZ</small>
       </aside>
+      <button id="calibrate" class="calibrate-button">INPUT KALIBRIEREN</button>
       <aside class="controller-panel" aria-label="Controller Inspector">
         <div class="controller-panel__title">
           <div>
@@ -29,6 +30,7 @@
         </div>
         <div id="controllers" aria-live="polite"></div>
       </aside>
+      <div id="calibration" class="wizard-layer" hidden></div>
       <div id="loading" role="status">Simulator wird initialisiert …</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
