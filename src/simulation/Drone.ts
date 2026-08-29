@@ -25,15 +25,17 @@ export interface DronePose {
 export class Drone {
   readonly body: RAPIER.RigidBody;
   private motorThrottle = 0;
+  private activeConfig: DroneConfig;
 
   constructor(
     world: RAPIER.World,
-    readonly config: Readonly<DroneConfig> = DEFAULT_DRONE_CONFIG,
+    config: Readonly<DroneConfig> = DEFAULT_DRONE_CONFIG,
     private readonly initialPose: DronePose = {
       position: { x: 0, y: 1, z: 0 },
       rotation: { x: 0, y: 0, z: 0, w: 1 },
     },
   ) {
+    this.activeConfig = { ...config };
     this.body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(
@@ -55,7 +57,20 @@ export class Drone {
     return this.motorThrottle;
   }
 
+  get config(): Readonly<DroneConfig> {
+    return this.activeConfig;
+  }
+
+  configure(config: Readonly<DroneConfig>): void {
+    this.activeConfig = { ...config };
+    this.body.setAdditionalMass(config.mass, true);
+  }
+
   update(throttle: number, deltaSeconds: number): void {
+    // Rapier's user forces persist until explicitly reset. Rebuild them every
+    // physics tick instead of accidentally accumulating thrust and drag.
+    this.body.resetForces(false);
+    this.body.resetTorques(false);
     const targetThrottle = Math.min(1, Math.max(0, throttle));
     const response =
       this.config.motorResponseTime <= 0

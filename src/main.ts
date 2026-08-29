@@ -8,6 +8,7 @@ import { loadInputConfiguration } from "./input/InputConfiguration";
 import { KeyboardInput } from "./input/KeyboardInput";
 import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
+import { DroneConfigurationPanel } from "./simulation/DroneConfiguration";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -35,6 +36,18 @@ async function start(): Promise<void> {
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
   const { world, drone } = await createPhysicsWorld();
+  const droneConfigurationElement = document.querySelector<HTMLElement>(
+    "#drone-configuration",
+  );
+  if (!droneConfigurationElement)
+    throw new Error("Drone configuration panel is missing");
+  const droneConfiguration = new DroneConfigurationPanel(
+    droneConfigurationElement,
+    drone,
+  );
+  document
+    .querySelector("#configure-drone")
+    ?.addEventListener("click", () => droneConfiguration.open());
   const reset = (): void => drone.reset();
   document.querySelector("#reset")?.addEventListener("click", reset);
   addEventListener("keydown", (event) => {

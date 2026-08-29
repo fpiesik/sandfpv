@@ -41,6 +41,19 @@ describe("Drone", () => {
     expect(Math.abs(drone.body.linvel().y)).toBeLessThan(0.01);
   });
 
+  it("replaces persistent forces on every physics tick", () => {
+    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    const drone = new Drone(world, { ...config, motorResponseTime: 0 });
+
+    drone.update(1, 1 / 120);
+    world.step();
+    const velocityAfterThrust = drone.body.linvel().y;
+    drone.update(0, 1 / 120);
+    world.step();
+
+    expect(drone.body.linvel().y).toBeCloseTo(velocityAfterThrust);
+  });
+
   it("resets transform, velocities, forces, and motor state", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(world, config);
