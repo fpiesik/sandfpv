@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Technische Basis des SandFPV-Browsersimulators"
+    />
+    <title>SandFPV</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas
+        id="simulator"
+        aria-label="3D-Ansicht des FPV-Simulators"
+      ></canvas>
+      <aside class="hud">
+        <strong>SAND<span>FPV</span></strong>
+        <small>PHYSICS · 120 HZ</small>
+      </aside>
+      <div id="loading" role="status">Simulator wird initialisiert …</div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
