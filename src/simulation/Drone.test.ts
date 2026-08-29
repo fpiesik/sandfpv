@@ -8,6 +8,15 @@ const config: DroneConfig = {
   linearDrag: 0,
   angularDrag: 0,
   motorResponseTime: 0.1,
+  maxRollRate: 600,
+  maxPitchRate: 600,
+  maxYawRate: 400,
+  rateExpo: 0.35,
+  rateKp: 0.12,
+  rateKi: 0,
+  rateKd: 0.003,
+  rateIntegralLimit: 2,
+  maxControlTorque: 2.5,
 };
 
 beforeAll(async () => RAPIER.init());
@@ -52,6 +61,17 @@ describe("Drone", () => {
     world.step();
 
     expect(drone.body.linvel().y).toBeCloseTo(velocityAfterThrust);
+  });
+
+  it("creates body torque from an acro rate command", () => {
+    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    const drone = new Drone(world, { ...config, rateKd: 0 });
+
+    drone.update(0, 1 / 120, { roll: 1, pitch: 0, yaw: 0 });
+
+    expect(drone.flightControllerDebug.desiredRates.x).toBeGreaterThan(0);
+    expect(drone.flightControllerDebug.torques.x).toBeGreaterThan(0);
+    expect(drone.flightControllerDebug.desiredRates.y).toBe(0);
   });
 
   it("resets transform, velocities, forces, and motor state", () => {
