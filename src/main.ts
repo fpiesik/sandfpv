@@ -9,6 +9,7 @@ import { KeyboardInput } from "./input/KeyboardInput";
 import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { DroneConfigurationPanel } from "./simulation/DroneConfiguration";
+import { FlightDebugPanel } from "./simulation/FlightDebugPanel";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -36,6 +37,9 @@ async function start(): Promise<void> {
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
   const { world, drone } = await createPhysicsWorld();
+  const debugElement = document.querySelector<HTMLElement>("#flight-debug");
+  if (!debugElement) throw new Error("Flight debug panel is missing");
+  const flightDebug = new FlightDebugPanel(debugElement);
   const droneConfigurationElement = document.querySelector<HTMLElement>(
     "#drone-configuration",
   );
@@ -66,6 +70,11 @@ async function start(): Promise<void> {
       drone.update(
         Math.max(gamepadControls.throttle, keyboardControls.throttle),
         stepSeconds,
+        {
+          roll: strongest(gamepadControls.roll, keyboardControls.roll),
+          pitch: strongest(gamepadControls.pitch, keyboardControls.pitch),
+          yaw: strongest(gamepadControls.yaw, keyboardControls.yaw),
+        },
       );
       world.timestep = stepSeconds;
       world.step();
@@ -77,9 +86,14 @@ async function start(): Promise<void> {
     view.drone.position.set(position.x, position.y, position.z);
     view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
     view.render();
+    flightDebug.render(drone.flightControllerDebug);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+}
+
+function strongest(first: number, second: number): number {
+  return Math.abs(first) >= Math.abs(second) ? first : second;
 }
 
 void start();
