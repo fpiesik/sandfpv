@@ -137,7 +137,7 @@ async function start(): Promise<void> {
     renderCourse(course.progress);
     lesson.update(null, time);
     renderLesson(lesson.state);
-    flightDebug.render(drone.flightControllerDebug);
+    flightDebug.render(drone.flightControllerDebug, fps);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
