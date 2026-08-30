@@ -10,6 +10,7 @@ import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { DroneConfigurationPanel } from "./simulation/DroneConfiguration";
 import { FlightDebugPanel } from "./simulation/FlightDebugPanel";
+import type { ControlState } from "./input/InputSource";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -56,26 +57,45 @@ async function start(): Promise<void> {
   document.querySelector("#reset")?.addEventListener("click", reset);
   addEventListener("keydown", (event) => {
     if (event.code === "KeyR" && !event.repeat) reset();
+    if (event.code === "KeyC" && !event.repeat)
+      setCameraMode(view.toggleCamera());
+    if (event.code === "KeyV" && !event.repeat)
+      document
+        .querySelector("#stick-visualizer")
+        ?.classList.toggle("sticks--hidden");
   });
+  const cameraAngle = requireInput("camera-angle");
+  const cameraFov = requireInput("camera-fov");
+  const configureCamera = (): void => {
+    const angle = Number(cameraAngle.value);
+    const fov = Number(cameraFov.value);
+    view.configureFpvCamera({ angle, fov });
+    setText("camera-angle-value", `${angle}°`);
+    setText("camera-fov-value", `${fov}°`);
+  };
+  cameraAngle.addEventListener("input", configureCamera);
+  cameraFov.addEventListener("input", configureCamera);
+  const setCameraMode = (mode: "fpv" | "debug"): void =>
+    setText("camera-mode", mode.toUpperCase());
+  document
+    .querySelector("#toggle-camera")
+    ?.addEventListener("click", () => setCameraMode(view.toggleCamera()));
   const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
+  let fps = 60;
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
 
   const frame = (time: number): void => {
+    const frameMilliseconds = time - previousTime;
     gamepadInput.update();
     keyboardInput.update();
+    const controls = combineControls(gamepadInput.read(), keyboardInput.read());
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
-      const gamepadControls = gamepadInput.read();
-      const keyboardControls = keyboardInput.read();
-      drone.update(
-        Math.max(gamepadControls.throttle, keyboardControls.throttle),
-        stepSeconds,
-        {
-          roll: strongest(gamepadControls.roll, keyboardControls.roll),
-          pitch: strongest(gamepadControls.pitch, keyboardControls.pitch),
-          yaw: strongest(gamepadControls.yaw, keyboardControls.yaw),
-        },
-      );
+      drone.update(controls.throttle, stepSeconds, {
+        roll: controls.roll,
+        pitch: controls.pitch,
+        yaw: controls.yaw,
+      });
       world.timestep = stepSeconds;
       world.step();
     });
@@ -86,10 +106,53 @@ async function start(): Promise<void> {
     view.drone.position.set(position.x, position.y, position.z);
     view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
     view.render();
+    fps += (1000 / Math.max(frameMilliseconds, 1) - fps) * 0.08;
+    renderHud(controls, fps);
     flightDebug.render(drone.flightControllerDebug);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+}
+
+function combineControls(
+  first: ControlState,
+  second: ControlState,
+): ControlState {
+  return {
+    throttle: Math.max(first.throttle, second.throttle),
+    roll: strongest(first.roll, second.roll),
+    pitch: strongest(first.pitch, second.pitch),
+    yaw: strongest(first.yaw, second.yaw),
+  };
+}
+
+function renderHud(controls: ControlState, fps: number): void {
+  setText("hud-throttle", `${Math.round(controls.throttle * 100)}%`);
+  setText("hud-roll", signed(controls.roll));
+  setText("hud-pitch", signed(controls.pitch));
+  setText("hud-yaw", signed(controls.yaw));
+  setText("hud-fps", `${Math.round(fps)} FPS`);
+  positionStick("left-stick", controls.yaw, controls.throttle * 2 - 1);
+  positionStick("right-stick", controls.roll, controls.pitch);
+}
+
+function positionStick(id: string, x: number, y: number): void {
+  const element = document.getElementById(id);
+  if (element)
+    element.style.transform = `translate(calc(-50% + ${x * 30}px), calc(-50% + ${y * 30}px))`;
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+function setText(id: string, value: string): void {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+}
+function requireInput(id: string): HTMLInputElement {
+  const input = document.getElementById(id);
+  if (!(input instanceof HTMLInputElement)) throw new Error(`${id} is missing`);
+  return input;
 }
 
 function strongest(first: number, second: number): number {
