@@ -12,14 +12,14 @@ export interface FpvCameraConfiguration {
 export class Scene {
   readonly scene = new THREE.Scene();
   readonly drone = new THREE.Group();
-  private readonly fpvCamera = new THREE.PerspectiveCamera(90, 1, 0.03, 200);
-  private readonly debugCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+  private readonly fpvCamera = new THREE.PerspectiveCamera(90, 1, 0.03, 300);
+  private readonly debugCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 300);
   private readonly renderer: THREE.WebGLRenderer;
   private mode: CameraMode = "fpv";
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene.background = new THREE.Color(0x111820);
-    this.scene.fog = new THREE.Fog(0x111820, 25, 55);
+    this.scene.fog = new THREE.Fog(0x111820, 65, 145);
     this.debugCamera.position.set(8, 6, 10);
     this.debugCamera.lookAt(0, 1.5, 0);
 
