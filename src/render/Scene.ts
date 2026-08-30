@@ -1,16 +1,26 @@
 import * as THREE from "three";
 
+export type CameraMode = "fpv" | "debug";
+
+export interface FpvCameraConfiguration {
+  angle: number;
+  fov: number;
+}
+
+/** Owns the simulator scene and the two deliberately different camera rigs. */
 export class Scene {
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
   readonly drone = new THREE.Group();
+  private readonly fpvCamera = new THREE.PerspectiveCamera(90, 1, 0.03, 200);
+  private readonly debugCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
   private readonly renderer: THREE.WebGLRenderer;
+  private mode: CameraMode = "fpv";
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene.background = new THREE.Color(0x9eb7bd);
     this.scene.fog = new THREE.Fog(0x9eb7bd, 25, 80);
-    this.camera.position.set(8, 6, 10);
-    this.camera.lookAt(0, 1.5, 0);
+    this.debugCamera.position.set(8, 6, 10);
+    this.debugCamera.lookAt(0, 1.5, 0);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -54,20 +64,58 @@ export class Scene {
     }
     body.castShadow = true;
     this.drone.add(body);
+
+    // The FPV camera is a child of the rigid body, so translation and every
+    // attitude change are inherited without a one-frame lag.
+    this.fpvCamera.position.set(0, 0.11, -0.22);
+    this.drone.add(this.fpvCamera);
+    this.configureFpvCamera({ angle: 25, fov: 90 });
     this.scene.add(this.drone);
     this.resize();
     addEventListener("resize", this.resize);
   }
 
+  get cameraMode(): CameraMode {
+    return this.mode;
+  }
+
+  setCameraMode(mode: CameraMode): void {
+    this.mode = mode;
+  }
+
+  toggleCamera(): CameraMode {
+    this.mode = this.mode === "fpv" ? "debug" : "fpv";
+    return this.mode;
+  }
+
+  configureFpvCamera({ angle, fov }: FpvCameraConfiguration): void {
+    this.fpvCamera.rotation.x = THREE.MathUtils.degToRad(angle);
+    this.fpvCamera.fov = fov;
+    this.fpvCamera.updateProjectionMatrix();
+  }
+
   render(): void {
-    this.renderer.render(this.scene, this.camera);
+    if (this.mode === "debug") {
+      const offset = new THREE.Vector3(5, 3.2, 6).applyQuaternion(
+        this.drone.quaternion,
+      );
+      const desired = this.drone.position.clone().add(offset);
+      this.debugCamera.position.lerp(desired, 0.08);
+      this.debugCamera.lookAt(this.drone.position);
+    }
+    this.renderer.render(
+      this.scene,
+      this.mode === "fpv" ? this.fpvCamera : this.debugCamera,
+    );
   }
 
   private readonly resize = (): void => {
     const { clientWidth: width, clientHeight: height } =
       this.renderer.domElement;
     this.renderer.setSize(width, height, false);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    for (const camera of [this.fpvCamera, this.debugCamera]) {
+      camera.aspect = width / Math.max(height, 1);
+      camera.updateProjectionMatrix();
+    }
   };
 }
