@@ -21,9 +21,11 @@ describe("axis normalization", () => {
     expect(normalizeCenteredAxis(0.9, calibration)).toBe(1);
   });
 
-  it("normalizes throttle to 0..1", () => {
+  it("starts unipolar throttle at the calibrated center", () => {
     expect(normalizeThrottleAxis(-0.8, calibration)).toBe(0);
-    expect(normalizeThrottleAxis(0.05, calibration)).toBeCloseTo(0.5);
+    expect(normalizeThrottleAxis(0.05, calibration)).toBe(0);
+    expect(normalizeThrottleAxis(0.1, calibration)).toBe(0);
+    expect(normalizeThrottleAxis(0.5, calibration)).toBeCloseTo(0.5);
     expect(normalizeThrottleAxis(0.9, calibration)).toBe(1);
   });
 
@@ -44,13 +46,15 @@ describe("axis normalization", () => {
     const legacyCalibration = { ...calibration, deadband: 0.99 };
 
     expect(normalizeCenteredAxis(0.5, legacyCalibration)).toBeCloseTo(0.375);
-    expect(normalizeThrottleAxis(0.5, legacyCalibration)).toBeGreaterThan(0.7);
+    expect(normalizeThrottleAxis(0.5, legacyCalibration)).toBeCloseTo(0.375);
   });
 
   it("inverts centered and throttle axes", () => {
     const inverted = { ...calibration, inverted: true };
     expect(normalizeCenteredAxis(0.9, inverted)).toBe(-1);
     expect(normalizeThrottleAxis(-0.8, inverted)).toBe(1);
+    expect(normalizeThrottleAxis(-0.35, inverted)).toBeCloseTo(0.5);
+    expect(normalizeThrottleAxis(0.1, inverted)).toBe(0);
     expect(normalizeThrottleAxis(0.9, inverted)).toBe(0);
   });
 });
