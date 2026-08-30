@@ -14,11 +14,9 @@ export function createCourseColliders(
     const [x, y, z] = box.position;
     const [width, height, depth] = box.size;
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(
-        width / 2,
-        height / 2,
-        depth / 2,
-      ).setTranslation(x, y, z),
+      RAPIER.ColliderDesc.cuboid(width / 2, height / 2, depth / 2)
+        .setTranslation(x, y, z)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     );
   }
 
@@ -60,7 +58,8 @@ function addGateFrame(world: RAPIER.World, gate: GatePlacement): void {
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(width / 2, height / 2, partDepth / 2)
         .setTranslation(x + rotatedX, y + localY, z + rotatedZ)
-        .setRotation(rotation),
+        .setRotation(rotation)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     );
   }
 }

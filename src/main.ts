@@ -15,6 +15,8 @@ import { FlightDebugPanel } from "./simulation/FlightDebugPanel";
 import type { ControlState } from "./input/InputSource";
 import { stickPositions } from "./input/StickVisualizer";
 import { GateCollisionHandler } from "./simulation/GateCollisionHandler";
+import { createFirstGatesLesson } from "./lesson/FirstGates";
+import type { LessonState } from "./lesson/Lesson";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -44,11 +46,17 @@ async function start(): Promise<void> {
   const { world, drone, eventQueue, gateByCollider } =
     await createPhysicsWorld();
   const course = new GateCourse(GATES.map(({ id }) => id));
+  const lesson = createFirstGatesLesson();
+  lesson.start();
   const gateCollisions = new GateCollisionHandler(
     eventQueue,
     gateByCollider,
     drone.body.handle,
-    course,
+    (gateId) => {
+      course.enter(gateId);
+      lesson.update({ type: "gate-entered", gateId });
+    },
+    () => lesson.update({ type: "crash" }),
   );
   const debugElement = document.querySelector<HTMLElement>("#flight-debug");
   if (!debugElement) throw new Error("Flight debug panel is missing");
@@ -68,6 +76,8 @@ async function start(): Promise<void> {
   const reset = (): void => {
     drone.reset();
     course.reset();
+    lesson.reset();
+    lesson.start();
   };
   document.querySelector("#reset")?.addEventListener("click", reset);
   addEventListener("keydown", (event) => {
@@ -125,10 +135,38 @@ async function start(): Promise<void> {
     fps += (1000 / Math.max(frameMilliseconds, 1) - fps) * 0.08;
     renderHud(controls, fps);
     renderCourse(course.progress);
+    lesson.update(null, time);
+    renderLesson(lesson.state);
     flightDebug.render(drone.flightControllerDebug);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+}
+
+function renderLesson(state: LessonState<number>): void {
+  setText("lesson-title", state.title);
+  setText(
+    "lesson-objective",
+    state.objective === null
+      ? "TRAINING ABGESCHLOSSEN"
+      : `GATE ${state.objective}`,
+  );
+  setText("lesson-hint", state.hint);
+  setText(
+    "lesson-progress",
+    `${state.completedObjectives} / ${state.totalObjectives}`,
+  );
+  setText("lesson-crashes", String(state.crashes));
+  setText("lesson-time", formatDuration(state.elapsedMilliseconds));
+  document
+    .getElementById("lesson-complete")
+    ?.toggleAttribute("hidden", state.status !== "completed");
+}
+
+function formatDuration(milliseconds: number): string {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  return `${String(minutes).padStart(2, "0")}:${String(totalSeconds % 60).padStart(2, "0")}`;
 }
 
 function renderCourse(progress: CourseProgress): void {
