@@ -89,6 +89,11 @@ export class Drone {
           initialPose.position.z,
         )
         .setRotation(initialPose.rotation)
+        // A whoop is tiny compared with the course and can cross its entire
+        // collider thickness during a hard impact. CCD keeps those impacts in
+        // the supported contact path instead of presenting a deeply embedded
+        // body to Rapier's discrete contact solver.
+        .setCcdEnabled(true)
         .setCanSleep(false),
     );
     this.collider = world.createCollider(

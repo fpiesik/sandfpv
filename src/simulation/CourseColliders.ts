@@ -10,7 +10,17 @@ export interface CourseCollisionData {
 export function createCourseColliders(
   world: RAPIER.World,
 ): CourseCollisionData {
-  for (const box of [...HALL_BOXES, ...OBSTACLES]) {
+  // The floor used to be a 108 m x 72 m x 0.2 m cuboid. That extreme size
+  // difference relative to the 65 mm drone makes ground contacts needlessly
+  // ill-conditioned. A half-space describes the same y=0 collision surface
+  // without edges or a thin volume for the drone to penetrate.
+  world.createCollider(
+    new RAPIER.ColliderDesc(
+      new RAPIER.HalfSpace({ x: 0, y: 1, z: 0 }),
+    ).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+  );
+
+  for (const box of [...HALL_BOXES.slice(1), ...OBSTACLES]) {
     const [x, y, z] = box.position;
     const [width, height, depth] = box.size;
     world.createCollider(
