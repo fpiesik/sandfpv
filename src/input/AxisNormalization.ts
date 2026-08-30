@@ -20,6 +20,7 @@ export function normalizeCenteredAxis(
   value: number,
   calibration: AxisCalibration,
 ): number {
+  if (!isFiniteCalibration(value, calibration)) return 0;
   const range =
     value < calibration.center
       ? calibration.center - calibration.minimum
@@ -39,6 +40,7 @@ export function normalizeThrottleAxis(
   value: number,
   calibration: AxisCalibration,
 ): number {
+  if (!isFiniteCalibration(value, calibration)) return 0;
   const end = calibration.inverted ? calibration.minimum : calibration.maximum;
   const span = Math.abs(end - calibration.center);
   const direction = calibration.inverted ? -1 : 1;
@@ -51,4 +53,17 @@ export function normalizeThrottleAxis(
   const deadband = clamp(calibration.deadband, 0, MAX_INPUT_DEADBAND);
   if (normalized <= deadband) return 0;
   return (normalized - deadband) / (1 - deadband);
+}
+
+function isFiniteCalibration(
+  value: number,
+  calibration: AxisCalibration,
+): boolean {
+  return [
+    value,
+    calibration.minimum,
+    calibration.maximum,
+    calibration.center,
+    calibration.deadband,
+  ].every(Number.isFinite);
 }
