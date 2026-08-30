@@ -53,6 +53,26 @@ describe("Drone", () => {
     expect(drone.body.linvel().y).toBeCloseTo(velocityAfterThrust);
   });
 
+  it("uses continuous collision detection and survives a hard landing", () => {
+    const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    world.timestep = 1 / 120;
+    world.createCollider(
+      new RAPIER.ColliderDesc(new RAPIER.HalfSpace({ x: 0, y: 1, z: 0 })),
+    );
+    const drone = new Drone(world, config);
+    drone.body.setLinvel({ x: 0, y: -30, z: 0 }, true);
+
+    expect(drone.body.isCcdEnabled()).toBe(true);
+    expect(() => {
+      for (let step = 0; step < 240; step += 1) {
+        drone.update(0, world.timestep);
+        world.step();
+      }
+    }).not.toThrow();
+    expect(drone.body.translation().y).toBeGreaterThan(0);
+    expect(Number.isFinite(drone.body.linvel().y)).toBe(true);
+  });
+
   it("creates body torque from an acro rate command", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(world, {
