@@ -1,0 +1,70 @@
+import RAPIER from "@dimforge/rapier3d-compat";
+import type { GatePlacement } from "../course/CourseLayout";
+import { GATES, HALL_BOXES, OBSTACLES } from "../course/CourseLayout";
+
+export interface CourseCollisionData {
+  readonly gateByCollider: ReadonlyMap<number, number>;
+}
+
+/** Builds the static physical course independently of its visual counterpart. */
+export function createCourseColliders(
+  world: RAPIER.World,
+): CourseCollisionData {
+  for (const box of [...HALL_BOXES, ...OBSTACLES]) {
+    const [x, y, z] = box.position;
+    const [width, height, depth] = box.size;
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(
+        width / 2,
+        height / 2,
+        depth / 2,
+      ).setTranslation(x, y, z),
+    );
+  }
+
+  const gateByCollider = new Map<number, number>();
+  for (const gate of GATES) {
+    addGateFrame(world, gate);
+    const [x, y, z] = gate.position;
+    const sensor = world.createCollider(
+      RAPIER.ColliderDesc.cuboid(
+        gate.width / 2 - 0.18,
+        gate.height / 2 - 0.18,
+        0.12,
+      )
+        .setTranslation(x, y, z)
+        .setRotation(yawRotation(gate.yaw))
+        .setSensor(true)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+    );
+    gateByCollider.set(sensor.handle, gate.id);
+  }
+  return { gateByCollider };
+}
+
+function addGateFrame(world: RAPIER.World, gate: GatePlacement): void {
+  const thickness = 0.22;
+  const depth = 0.35;
+  const [x, y, z] = gate.position;
+  const rotation = yawRotation(gate.yaw);
+  const parts: readonly (readonly [number, number, number, number, number])[] =
+    [
+      [-gate.width / 2, 0, thickness, gate.height + thickness, depth],
+      [gate.width / 2, 0, thickness, gate.height + thickness, depth],
+      [0, gate.height / 2, gate.width + thickness, thickness, depth],
+      [0, -gate.height / 2, gate.width + thickness, thickness, depth],
+    ];
+  for (const [localX, localY, width, height, partDepth] of parts) {
+    const rotatedX = localX * Math.cos(gate.yaw);
+    const rotatedZ = -localX * Math.sin(gate.yaw);
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(width / 2, height / 2, partDepth / 2)
+        .setTranslation(x + rotatedX, y + localY, z + rotatedZ)
+        .setRotation(rotation),
+    );
+  }
+}
+
+function yawRotation(yaw: number): RAPIER.Rotation {
+  return { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) };
+}

@@ -85,6 +85,37 @@ canvas {
   display: none;
 }
 
+.course-hud {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  min-width: 11rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgb(255 140 25 / 65%);
+  border-top: 3px solid #ff8c19;
+  background: rgb(10 14 18 / 78%);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  backdrop-filter: blur(8px);
+}
+.course-hud small {
+  display: block;
+  color: #99a5ae;
+  font-size: 0.55rem;
+}
+.course-hud strong {
+  display: block;
+  margin: 0.25rem 0 0.55rem;
+  color: #ff9e3d;
+  font-size: 1.35rem;
+}
+.course-hud div {
+  display: flex;
+  justify-content: space-between;
+  color: #dce3e7;
+  font-size: 0.62rem;
+}
+
 .camera-settings {
   position: fixed;
   top: 1.5rem;
