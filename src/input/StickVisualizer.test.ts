@@ -13,16 +13,16 @@ describe("stick visualizer", () => {
 
     expect(stickPositions(controls)).toEqual({
       left: { x: -0.5, y: -0.5 },
-      right: { x: 0.25, y: 0.8 },
+      right: { x: -0.8, y: -0.25 },
     });
   });
 
-  it("maps roll sideways and pitch forwards", () => {
+  it("inverts the right stick axes independently", () => {
     expect(
       stickPositions({ throttle: 0, yaw: 0, roll: 1, pitch: 0 }).right,
-    ).toEqual({ x: -1, y: 0 });
+    ).toEqual({ x: -0, y: 1 });
     expect(
       stickPositions({ throttle: 0, yaw: 0, roll: 0, pitch: 1 }).right,
-    ).toEqual({ x: -0, y: 1 });
+    ).toEqual({ x: -1, y: 0 });
   });
 });
