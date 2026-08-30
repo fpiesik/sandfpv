@@ -183,7 +183,7 @@ canvas {
 
 .flight-debug {
   position: fixed;
-  top: 5.5rem;
+  top: 7rem;
   left: 1.5rem;
   min-width: 29rem;
   padding: 0.65rem 0.8rem;
@@ -557,7 +557,7 @@ canvas {
     left: 0.75rem;
   }
   .flight-debug {
-    top: 4.75rem;
+    top: 6rem;
     left: 0.75rem;
     min-width: 0;
     width: calc(100vw - 1.5rem);
