@@ -1,49 +1,59 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import type { ControlState } from "../input/InputSource";
 import { applyRateCurve, RateController } from "./RateController";
+import { AIR65_II_RACING } from "./DronePresets";
+
+export interface AxisControllerConfig {
+  kp: number;
+  ki: number;
+  kd: number;
+  feedForward: number;
+}
 
 export interface DroneConfig {
-  mass: number;
-  maxThrust: number;
+  massKg: number;
+  wheelbaseM: number;
+  colliderHeightM: number;
+  centerOfMassOffsetM: number;
+  inertiaRollKgM2: number;
+  inertiaPitchKgM2: number;
+  inertiaYawKgM2: number;
+  thrustToWeightRatio: number;
   minMotorThrottle: number;
   maxMotorThrottle: number;
-  linearDrag: number;
+  motorTimeConstantUp: number;
+  motorTimeConstantDown: number;
+  dragForward: number;
+  dragSideways: number;
+  dragVertical: number;
   angularDrag: number;
-  motorResponseTime: number;
   maxRollRate: number;
   maxPitchRate: number;
   maxYawRate: number;
   rateExpo: number;
-  rateKp: number;
-  rateKi: number;
-  rateKd: number;
+  rollController: AxisControllerConfig;
+  pitchController: AxisControllerConfig;
+  yawController: AxisControllerConfig;
   rateIntegralLimit: number;
   maxControlTorque: number;
 }
 
-export const DEFAULT_DRONE_CONFIG: Readonly<DroneConfig> = {
-  mass: 1,
-  maxThrust: 20,
-  minMotorThrottle: 0,
-  maxMotorThrottle: 1,
-  linearDrag: 0.2,
-  angularDrag: 0.08,
-  motorResponseTime: 0.12,
-  maxRollRate: 600,
-  maxPitchRate: 600,
-  maxYawRate: 400,
-  rateExpo: 0.35,
-  rateKp: 0.12,
-  rateKi: 0,
-  rateKd: 0.003,
-  rateIntegralLimit: 2,
-  maxControlTorque: 2.5,
-};
+export const DEFAULT_DRONE_CONFIG: Readonly<DroneConfig> = AIR65_II_RACING;
 
 export interface FlightControllerDebug {
+  massKg: number;
+  thrustToWeightRatio: number;
+  throttleInput: number;
+  motorOutput: number;
+  totalThrustN: number;
+  sticks: RAPIER.Vector;
   desiredRates: RAPIER.Vector;
   actualRates: RAPIER.Vector;
   torques: RAPIER.Vector;
+  linearVelocity: RAPIER.Vector;
+  angularVelocity: RAPIER.Vector;
+  angularInertia: RAPIER.Vector;
+  physicsHz: number;
 }
 
 export interface DronePose {
@@ -51,18 +61,16 @@ export interface DronePose {
   rotation: RAPIER.Rotation;
 }
 
-/** A deliberately small rigid-body flight model with body-rate attitude control. */
+const ZERO = { x: 0, y: 0, z: 0 };
+
+/** Generic rigid-body multicopter model with body-rate (Acro) control. */
 export class Drone {
   readonly body: RAPIER.RigidBody;
   private readonly collider: RAPIER.Collider;
   private motorThrottle = 0;
   private activeConfig: DroneConfig;
   private readonly rateController = new RateController();
-  private debug: FlightControllerDebug = {
-    desiredRates: { x: 0, y: 0, z: 0 },
-    actualRates: { x: 0, y: 0, z: 0 },
-    torques: { x: 0, y: 0, z: 0 },
-  };
+  private debug: FlightControllerDebug;
 
   constructor(
     world: RAPIER.World,
@@ -72,7 +80,7 @@ export class Drone {
       rotation: { x: 0, y: 0, z: 0, w: 1 },
     },
   ) {
-    this.activeConfig = { ...config };
+    this.activeConfig = structuredClone(config);
     this.body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(
@@ -83,30 +91,42 @@ export class Drone {
         .setRotation(initialPose.rotation)
         .setCanSleep(false),
     );
-    // Let the collider derive both mass and angular inertia from its shape.
-    // An additional point mass gives Rapier no useful inertia tensor, making
-    // an otherwise dynamic drone effectively unable to roll, pitch, or yaw.
     this.collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(0.28, 0.08, 0.28).setMass(config.mass),
+      RAPIER.ColliderDesc.cuboid(
+        config.wheelbaseM / 2,
+        config.colliderHeightM / 2,
+        config.wheelbaseM / 2,
+      ),
       this.body,
     );
+    this.applyMassProperties(config);
+    this.debug = this.emptyDebug(config);
   }
 
   get currentMotorThrottle(): number {
     return this.motorThrottle;
   }
-
+  get maxThrustNewton(): number {
+    return this.config.massKg * 9.81 * this.config.thrustToWeightRatio;
+  }
   get config(): Readonly<DroneConfig> {
     return this.activeConfig;
   }
-
   get flightControllerDebug(): Readonly<FlightControllerDebug> {
     return this.debug;
   }
 
   configure(config: Readonly<DroneConfig>): void {
-    this.activeConfig = { ...config };
-    this.collider.setMass(config.mass);
+    this.activeConfig = structuredClone(config);
+    this.collider.setShape(
+      new RAPIER.Cuboid(
+        config.wheelbaseM / 2,
+        config.colliderHeightM / 2,
+        config.wheelbaseM / 2,
+      ),
+    );
+    this.applyMassProperties(config);
+    this.rateController.reset();
   }
 
   update(
@@ -118,32 +138,37 @@ export class Drone {
       yaw: 0,
     },
   ): void {
-    // Rapier's user forces persist until explicitly reset. Rebuild them every
-    // physics tick instead of accidentally accumulating thrust and drag.
     this.body.resetForces(false);
     this.body.resetTorques(false);
-    const command = Math.min(1, Math.max(0, throttle));
-    const targetThrottle =
+    const command = clamp(throttle, 0, 1);
+    const target =
       this.config.minMotorThrottle +
       command * (this.config.maxMotorThrottle - this.config.minMotorThrottle);
-    const response =
-      this.config.motorResponseTime <= 0
-        ? 1
-        : 1 - Math.exp(-deltaSeconds / this.config.motorResponseTime);
-    this.motorThrottle += (targetThrottle - this.motorThrottle) * response;
+    const tau =
+      target >= this.motorThrottle
+        ? this.config.motorTimeConstantUp
+        : this.config.motorTimeConstantDown;
+    const alpha = tau <= 0 ? 1 : 1 - Math.exp(-deltaSeconds / tau);
+    this.motorThrottle += (target - this.motorThrottle) * alpha;
 
     const rotation = this.body.rotation();
-    const localUp = rotateVector(rotation, { x: 0, y: 1, z: 0 });
-    const thrust = this.motorThrottle * this.config.maxThrust;
-    this.body.addForce(scale(localUp, thrust), true);
+    const thrust = this.motorThrottle * this.maxThrustNewton;
+    this.body.addForce(
+      scale(rotateVector(rotation, { x: 0, y: 1, z: 0 }), thrust),
+      true,
+    );
 
-    const velocity = this.body.linvel();
-    this.body.addForce(scale(velocity, -this.config.linearDrag), true);
+    // Duct/airframe drag is anisotropic in body axes, then applied in world axes.
+    const localVelocity = inverseRotateVector(rotation, this.body.linvel());
+    const localDrag = {
+      x: -localVelocity.x * this.config.dragSideways,
+      y: -localVelocity.y * this.config.dragVertical,
+      z: -localVelocity.z * this.config.dragForward,
+    };
+    this.body.addForce(rotateVector(rotation, localDrag), true);
     const angularVelocity = this.body.angvel();
     this.body.addTorque(scale(angularVelocity, -this.config.angularDrag), true);
 
-    // Controller axes are body-local: X roll, Y yaw and Z pitch. Rapier's
-    // angular velocity and applied torque are world-space, so convert both.
     const actualRates = inverseRotateVector(rotation, angularVelocity);
     const desiredRates = {
       x: applyRateCurve(
@@ -169,53 +194,91 @@ export class Drone {
       this.config,
     );
     this.body.addTorque(rotateVector(rotation, torques), true);
-    this.debug = { desiredRates, actualRates, torques };
+    this.debug = {
+      massKg: this.config.massKg,
+      thrustToWeightRatio: this.config.thrustToWeightRatio,
+      throttleInput: command,
+      motorOutput: this.motorThrottle,
+      totalThrustN: thrust,
+      sticks: { x: controls.roll, y: controls.yaw, z: controls.pitch },
+      desiredRates,
+      actualRates,
+      torques,
+      linearVelocity: { ...this.body.linvel() },
+      angularVelocity: { ...angularVelocity },
+      angularInertia: this.inertiaVector(this.config),
+      physicsHz: 1 / deltaSeconds,
+    };
   }
 
   reset(): void {
     this.body.setTranslation(this.initialPose.position, true);
     this.body.setRotation(this.initialPose.rotation, true);
-    this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-    this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setLinvel(ZERO, true);
+    this.body.setAngvel(ZERO, true);
     this.body.resetForces(true);
     this.body.resetTorques(true);
     this.motorThrottle = 0;
     this.rateController.reset();
-    this.debug = {
-      desiredRates: { x: 0, y: 0, z: 0 },
-      actualRates: { x: 0, y: 0, z: 0 },
-      torques: { x: 0, y: 0, z: 0 },
+    this.debug = this.emptyDebug(this.config);
+  }
+
+  private applyMassProperties(config: Readonly<DroneConfig>): void {
+    // Explicit values prevent the collision box from dictating agility. The COM
+    // sits slightly below the prop plane; orientation remains entirely torque-driven.
+    this.collider.setMassProperties(
+      config.massKg,
+      { x: 0, y: config.centerOfMassOffsetM, z: 0 },
+      this.inertiaVector(config),
+      { x: 0, y: 0, z: 0, w: 1 },
+    );
+  }
+
+  private inertiaVector(config: Readonly<DroneConfig>): RAPIER.Vector {
+    return {
+      x: config.inertiaRollKgM2,
+      y: config.inertiaYawKgM2,
+      z: config.inertiaPitchKgM2,
+    };
+  }
+
+  private emptyDebug(config: Readonly<DroneConfig>): FlightControllerDebug {
+    return {
+      massKg: config.massKg,
+      thrustToWeightRatio: config.thrustToWeightRatio,
+      throttleInput: 0,
+      motorOutput: 0,
+      totalThrustN: 0,
+      sticks: ZERO,
+      desiredRates: ZERO,
+      actualRates: ZERO,
+      torques: ZERO,
+      linearVelocity: ZERO,
+      angularVelocity: ZERO,
+      angularInertia: this.inertiaVector(config),
+      physicsHz: 0,
     };
   }
 }
 
 function inverseRotateVector(
-  quaternion: RAPIER.Rotation,
-  vector: RAPIER.Vector,
+  q: RAPIER.Rotation,
+  v: RAPIER.Vector,
 ): RAPIER.Vector {
-  return rotateVector(
-    { x: -quaternion.x, y: -quaternion.y, z: -quaternion.z, w: quaternion.w },
-    vector,
-  );
+  return rotateVector({ x: -q.x, y: -q.y, z: -q.z, w: q.w }, v);
 }
-
-function scale(vector: RAPIER.Vector, factor: number): RAPIER.Vector {
-  return {
-    x: vector.x * factor,
-    y: vector.y * factor,
-    z: vector.z * factor,
-  };
+function scale(v: RAPIER.Vector, factor: number): RAPIER.Vector {
+  return { x: v.x * factor, y: v.y * factor, z: v.z * factor };
 }
-
-function rotateVector(
-  quaternion: RAPIER.Rotation,
-  vector: RAPIER.Vector,
-): RAPIER.Vector {
-  const { x: qx, y: qy, z: qz, w: qw } = quaternion;
-  const ix = qw * vector.x + qy * vector.z - qz * vector.y;
-  const iy = qw * vector.y + qz * vector.x - qx * vector.z;
-  const iz = qw * vector.z + qx * vector.y - qy * vector.x;
-  const iw = -qx * vector.x - qy * vector.y - qz * vector.z;
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+function rotateVector(q: RAPIER.Rotation, v: RAPIER.Vector): RAPIER.Vector {
+  const { x: qx, y: qy, z: qz, w: qw } = q;
+  const ix = qw * v.x + qy * v.z - qz * v.y;
+  const iy = qw * v.y + qz * v.x - qx * v.z;
+  const iz = qw * v.z + qx * v.y - qy * v.x;
+  const iw = -qx * v.x - qy * v.y - qz * v.z;
   return {
     x: ix * qw + iw * -qx + iy * -qz - iz * -qy,
     y: iy * qw + iw * -qy + iz * -qx - ix * -qz,

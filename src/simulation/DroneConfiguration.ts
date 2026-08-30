@@ -2,22 +2,34 @@ import { DEFAULT_DRONE_CONFIG, type Drone, type DroneConfig } from "./Drone";
 
 export const DRONE_CONFIGURATION_KEY = "sandfpv.drone.v1";
 
+type NumericDroneConfigKey = Exclude<
+  keyof DroneConfig,
+  "rollController" | "pitchController" | "yawController"
+>;
+
 const FIELDS: ReadonlyArray<{
-  key: keyof DroneConfig;
+  key: NumericDroneConfigKey;
   label: string;
   min: number;
   max: number;
   step: number;
   unit: string;
 }> = [
-  { key: "mass", label: "Masse", min: 0.1, max: 20, step: 0.1, unit: "kg" },
   {
-    key: "maxThrust",
-    label: "Maximaler Schub",
+    key: "massKg",
+    label: "Masse",
+    min: 0.01,
+    max: 20,
+    step: 0.001,
+    unit: "kg",
+  },
+  {
+    key: "thrustToWeightRatio",
+    label: "Schub-Gewicht-Verhältnis",
     min: 1,
-    max: 200,
-    step: 1,
-    unit: "N",
+    max: 10,
+    step: 0.1,
+    unit: ":1",
   },
   {
     key: "minMotorThrottle",
@@ -36,11 +48,11 @@ const FIELDS: ReadonlyArray<{
     unit: "0–1",
   },
   {
-    key: "linearDrag",
-    label: "Linearer Widerstand",
+    key: "dragForward",
+    label: "Widerstand vorwärts",
     min: 0,
     max: 10,
-    step: 0.05,
+    step: 0.001,
     unit: "",
   },
   {
@@ -48,20 +60,28 @@ const FIELDS: ReadonlyArray<{
     label: "Angularer Widerstand",
     min: 0,
     max: 10,
-    step: 0.01,
+    step: 0.000001,
     unit: "",
   },
   {
-    key: "motorResponseTime",
-    label: "Motor-Ansprechzeit",
+    key: "motorTimeConstantUp",
+    label: "Motor-Ansprechzeit aufwärts",
     min: 0,
     max: 2,
-    step: 0.01,
+    step: 0.001,
+    unit: "s",
+  },
+  {
+    key: "motorTimeConstantDown",
+    label: "Motor-Ansprechzeit abwärts",
+    min: 0,
+    max: 2,
+    step: 0.001,
     unit: "s",
   },
   {
     key: "maxRollRate",
-    label: "Max. Pitch-Rate",
+    label: "Max. Roll-Rate",
     min: 0,
     max: 2000,
     step: 10,
@@ -69,7 +89,7 @@ const FIELDS: ReadonlyArray<{
   },
   {
     key: "maxPitchRate",
-    label: "Max. Roll-Rate",
+    label: "Max. Pitch-Rate",
     min: 0,
     max: 2000,
     step: 10,
@@ -91,9 +111,6 @@ const FIELDS: ReadonlyArray<{
     step: 0.05,
     unit: "",
   },
-  { key: "rateKp", label: "Rate P", min: 0, max: 10, step: 0.001, unit: "" },
-  { key: "rateKi", label: "Rate I", min: 0, max: 10, step: 0.001, unit: "" },
-  { key: "rateKd", label: "Rate D", min: 0, max: 10, step: 0.001, unit: "" },
   {
     key: "rateIntegralLimit",
     label: "I-Limit",
@@ -107,7 +124,7 @@ const FIELDS: ReadonlyArray<{
     label: "Max. Steuerdrehmoment",
     min: 0,
     max: 100,
-    step: 0.1,
+    step: 0.0001,
     unit: "Nm",
   },
 ];
@@ -120,13 +137,17 @@ export function loadDroneConfiguration(
       storage.getItem(DRONE_CONFIGURATION_KEY) ?? "null",
     ) as Partial<DroneConfig> | null;
     if (!parsed) return { ...DEFAULT_DRONE_CONFIG };
-    const config = { ...DEFAULT_DRONE_CONFIG, ...parsed };
+    const config = { ...structuredClone(DEFAULT_DRONE_CONFIG), ...parsed };
     return FIELDS.every(
       ({ key, min, max }) =>
         Number.isFinite(config[key]) &&
         config[key] >= min &&
         config[key] <= max,
-    ) && config.minMotorThrottle <= config.maxMotorThrottle
+    ) &&
+      config.minMotorThrottle <= config.maxMotorThrottle &&
+      config.rollController != null &&
+      config.pitchController != null &&
+      config.yawController != null
       ? config
       : { ...DEFAULT_DRONE_CONFIG };
   } catch {
@@ -169,9 +190,13 @@ export class DroneConfigurationPanel {
   private readonly onSubmit = (event: Event): void => {
     event.preventDefault();
     const data = new FormData(event.target as HTMLFormElement);
-    const config = Object.fromEntries(
+    const values = Object.fromEntries(
       FIELDS.map(({ key }) => [key, Number(data.get(key))]),
-    ) as unknown as DroneConfig;
+    ) as Partial<DroneConfig>;
+    const config = {
+      ...structuredClone(this.drone.config),
+      ...values,
+    } as DroneConfig;
     if (config.minMotorThrottle > config.maxMotorThrottle) {
       const maximum = (event.target as HTMLFormElement).elements.namedItem(
         "maxMotorThrottle",

@@ -24,16 +24,24 @@ export function applyRateCurve(
 }
 
 export interface RateControllerTuning {
-  rateKp: number;
-  rateKi: number;
-  rateKd: number;
+  rollController: AxisTuning;
+  pitchController: AxisTuning;
+  yawController: AxisTuning;
   rateIntegralLimit: number;
   maxControlTorque: number;
+}
+
+interface AxisTuning {
+  kp: number;
+  ki: number;
+  kd: number;
+  feedForward: number;
 }
 
 export class RateController {
   private integral: RAPIER.Vector = { x: 0, y: 0, z: 0 };
   private previousActual: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+  private previousDesired: RAPIER.Vector = { x: 0, y: 0, z: 0 };
 
   update(
     desired: RAPIER.Vector,
@@ -54,12 +62,23 @@ export class RateController {
       subtract(actual, this.previousActual),
       1 / dt,
     );
+    const desiredDerivative = scale(
+      subtract(desired, this.previousDesired),
+      1 / dt,
+    );
     this.previousActual = { ...actual };
+    this.previousDesired = { ...desired };
+    const axes: Record<Axis, AxisTuning> = {
+      x: tuning.rollController,
+      y: tuning.yawController,
+      z: tuning.pitchController,
+    };
     return mapVector(error, (value, axis) =>
       clamp(
-        tuning.rateKp * value +
-          tuning.rateKi * this.integral[axis] -
-          tuning.rateKd * actualDerivative[axis],
+        axes[axis].kp * value +
+          axes[axis].ki * this.integral[axis] -
+          axes[axis].kd * actualDerivative[axis] +
+          axes[axis].feedForward * desiredDerivative[axis],
         -tuning.maxControlTorque,
         tuning.maxControlTorque,
       ),
@@ -69,6 +88,7 @@ export class RateController {
   reset(): void {
     this.integral = { x: 0, y: 0, z: 0 };
     this.previousActual = { x: 0, y: 0, z: 0 };
+    this.previousDesired = { x: 0, y: 0, z: 0 };
   }
 }
 
