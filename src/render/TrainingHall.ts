@@ -1,10 +1,5 @@
 import * as THREE from "three";
-import {
-  GATES,
-  HALL_BOXES,
-  HALL_WIDTH,
-  OBSTACLES,
-} from "../course/CourseLayout";
+import { GATES, HALL_BOXES, OBSTACLES } from "../course/CourseLayout";
 
 /** Creates only the low-poly visual representation of the training hall. */
 export function createTrainingHall(): THREE.Group {
@@ -49,7 +44,7 @@ export function createTrainingHall(): THREE.Group {
     hall.add(group);
   }
 
-  const grid = new THREE.GridHelper(HALL_WIDTH, HALL_WIDTH, 0x708090, 0x46515d);
+  const grid = new THREE.GridHelper(36, 36, 0x708090, 0x46515d);
   grid.position.y = 0.011;
   hall.add(grid);
   return hall;
