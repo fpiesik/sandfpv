@@ -11,7 +11,6 @@ import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { DroneConfigurationPanel } from "./simulation/DroneConfiguration";
 import { FlightDebugPanel } from "./simulation/FlightDebugPanel";
 import type { ControlState } from "./input/InputSource";
-import { stickPositions } from "./input/StickVisualizer";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -133,9 +132,8 @@ function renderHud(controls: ControlState, fps: number): void {
   setText("hud-pitch", signed(controls.pitch));
   setText("hud-yaw", signed(controls.yaw));
   setText("hud-fps", `${Math.round(fps)} FPS`);
-  const sticks = stickPositions(controls);
-  positionStick("left-stick", sticks.left.x, sticks.left.y);
-  positionStick("right-stick", sticks.right.x, sticks.right.y);
+  positionStick("left-stick", controls.yaw, controls.throttle * 2 - 1);
+  positionStick("right-stick", controls.roll, controls.pitch);
 }
 
 function positionStick(id: string, x: number, y: number): void {
