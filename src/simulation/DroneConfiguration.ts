@@ -1,9 +1,4 @@
-import {
-  DEFAULT_DRONE_CONFIG,
-  type AxisControllerConfig,
-  type Drone,
-  type DroneConfig,
-} from "./Drone";
+import { DEFAULT_DRONE_CONFIG, type Drone, type DroneConfig } from "./Drone";
 
 export const DRONE_CONFIGURATION_KEY = "sandfpv.drone.v1";
 
@@ -141,21 +136,8 @@ export function loadDroneConfiguration(
     const parsed = JSON.parse(
       storage.getItem(DRONE_CONFIGURATION_KEY) ?? "null",
     ) as Partial<DroneConfig> | null;
-    if (!parsed) return structuredClone(DEFAULT_DRONE_CONFIG);
-    // Configuration objects outlive releases in localStorage. Merge nested
-    // controller settings separately so a setting saved before a new gain was
-    // introduced cannot pass `undefined` into Rapier and poison the world with
-    // NaN forces/torques.
-    const config: DroneConfig = {
-      ...structuredClone(DEFAULT_DRONE_CONFIG),
-      ...parsed,
-      rollController: mergeController(parsed.rollController, "rollController"),
-      pitchController: mergeController(
-        parsed.pitchController,
-        "pitchController",
-      ),
-      yawController: mergeController(parsed.yawController, "yawController"),
-    };
+    if (!parsed) return { ...DEFAULT_DRONE_CONFIG };
+    const config = { ...structuredClone(DEFAULT_DRONE_CONFIG), ...parsed };
     return FIELDS.every(
       ({ key, min, max }) =>
         Number.isFinite(config[key]) &&
@@ -163,45 +145,14 @@ export function loadDroneConfiguration(
         config[key] <= max,
     ) &&
       config.minMotorThrottle <= config.maxMotorThrottle &&
-      isValidPhysicsConfig(config) &&
-      isValidController(config.rollController) &&
-      isValidController(config.pitchController) &&
-      isValidController(config.yawController)
+      config.rollController != null &&
+      config.pitchController != null &&
+      config.yawController != null
       ? config
-      : structuredClone(DEFAULT_DRONE_CONFIG);
+      : { ...DEFAULT_DRONE_CONFIG };
   } catch {
-    return structuredClone(DEFAULT_DRONE_CONFIG);
+    return { ...DEFAULT_DRONE_CONFIG };
   }
-}
-
-function mergeController(
-  stored: Partial<AxisControllerConfig> | undefined,
-  key: "rollController" | "pitchController" | "yawController",
-): AxisControllerConfig {
-  return { ...DEFAULT_DRONE_CONFIG[key], ...stored };
-}
-
-function isValidController(controller: AxisControllerConfig): boolean {
-  return Object.values(controller).every(
-    (value) => Number.isFinite(value) && value >= 0,
-  );
-}
-
-function isValidPhysicsConfig(config: DroneConfig): boolean {
-  return (
-    [
-      config.wheelbaseM,
-      config.colliderHeightM,
-      config.inertiaRollKgM2,
-      config.inertiaPitchKgM2,
-      config.inertiaYawKgM2,
-    ].every((value) => Number.isFinite(value) && value > 0) &&
-    [
-      config.centerOfMassOffsetM,
-      config.dragSideways,
-      config.dragVertical,
-    ].every((value) => Number.isFinite(value))
-  );
 }
 
 export class DroneConfigurationPanel {
