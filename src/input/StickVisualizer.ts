@@ -11,6 +11,6 @@ export function stickPositions(controls: ControlState): {
 } {
   return {
     left: { x: -controls.yaw, y: 1 - controls.throttle * 2 },
-    right: { x: controls.roll, y: -controls.pitch },
+    right: { x: controls.pitch, y: -controls.roll },
   };
 }
