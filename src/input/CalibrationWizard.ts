@@ -43,13 +43,10 @@ export class CalibrationWizard {
     manager.subscribe((gamepads) => {
       const wasConnected = Boolean(this.gamepad);
       this.gamepad = gamepads[0];
-      if (this.capture && this.gamepad) {
-        this.captureRanges(this.gamepad);
-        this.updateRangeValues();
-      }
+      if (this.capture && this.gamepad) this.captureRanges(this.gamepad);
       if (
         !this.root.hasAttribute("hidden") &&
-        wasConnected !== Boolean(this.gamepad)
+        (this.capture || wasConnected !== Boolean(this.gamepad))
       )
         this.render();
     });
@@ -90,7 +87,7 @@ export class CalibrationWizard {
   private rangeStep(): string {
     return `<p>Bewege alle vier zugeordneten Achsen mehrfach bis zu ihren Endanschlägen.</p>
       <button class="capture ${this.capture ? "capture--active" : ""}" data-action="capture">${this.capture ? "Erfassung läuft …" : "Erfassung starten"}</button>
-      <div class="wizard-values">${CONTROLS.map((name) => `<div><strong>${LABELS[name]}</strong><span data-range-min="${name}">MIN ${this.format(this.draft[name].minimum)}</span><span data-range-max="${name}">MAX ${this.format(this.draft[name].maximum)}</span></div>`).join("")}</div>`;
+      <div class="wizard-values">${CONTROLS.map((name) => `<div><strong>${LABELS[name]}</strong><span>MIN ${this.format(this.draft[name].minimum)}</span><span>MAX ${this.format(this.draft[name].maximum)}</span></div>`).join("")}</div>`;
   }
 
   private settingsStep(): string {
@@ -141,21 +138,6 @@ export class CalibrationWizard {
         minimum: Math.min(this.draft[name].minimum, value),
         maximum: Math.max(this.draft[name].maximum, value),
       });
-    }
-  }
-
-  private updateRangeValues(): void {
-    for (const name of CONTROLS) {
-      const minimum = this.root.querySelector<HTMLElement>(
-        `[data-range-min="${name}"]`,
-      );
-      const maximum = this.root.querySelector<HTMLElement>(
-        `[data-range-max="${name}"]`,
-      );
-      if (minimum)
-        minimum.textContent = `MIN ${this.format(this.draft[name].minimum)}`;
-      if (maximum)
-        maximum.textContent = `MAX ${this.format(this.draft[name].maximum)}`;
     }
   }
 
