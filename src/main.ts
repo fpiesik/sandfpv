@@ -8,6 +8,11 @@ import { loadInputConfiguration } from "./input/InputConfiguration";
 import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { FlightController } from "./simulation/FlightController";
+import {
+  DroneTuningPanel,
+  loadDroneTuning,
+  saveDroneTuning,
+} from "./simulation/DroneTuning";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -33,8 +38,19 @@ async function start(): Promise<void> {
   document
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
-  const { world, drone } = await createPhysicsWorld();
+  let tuning = loadDroneTuning();
+  const { world, drone } = await createPhysicsWorld(tuning);
   const flightController = new FlightController(drone);
+  const tuningElement = document.querySelector<HTMLElement>("#tuning");
+  if (!tuningElement) throw new Error("Drone tuning panel is missing");
+  const tuningPanel = new DroneTuningPanel(tuningElement, (next) => {
+    tuning = next;
+    drone.applyConfig(next);
+    saveDroneTuning(next);
+  });
+  document
+    .querySelector("#open-tuning")
+    ?.addEventListener("click", () => tuningPanel.open(tuning));
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
   document.querySelector("#reset")?.addEventListener("click", () => {

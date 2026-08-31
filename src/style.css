@@ -56,7 +56,8 @@ canvas {
 }
 
 .calibrate-button,
-.reset-button {
+.reset-button,
+.tuning-button {
   position: fixed;
   bottom: 1.5rem;
   left: 1.5rem;
@@ -72,6 +73,100 @@ canvas {
 }
 .reset-button {
   bottom: 4.6rem;
+}
+.tuning-button {
+  bottom: 7.7rem;
+}
+
+.tuning-panel {
+  width: min(48rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.2rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: #111713;
+  box-shadow: 0 1.5rem 5rem #000;
+}
+.tuning-panel header,
+.tuning-panel footer,
+.tuning-hover {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.tuning-panel header {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.tuning-panel h2 {
+  margin: 0.2rem 0 0.8rem;
+}
+.tuning-panel small,
+.tuning-hover span {
+  color: #8f9c91;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+}
+.tuning-panel button {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #4b574e;
+  color: inherit;
+  background: #1a221c;
+  cursor: pointer;
+}
+.tuning-panel header button {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+}
+.tuning-panel button.primary {
+  border-color: #ffb000;
+  color: #ffb000;
+}
+.tuning-hint {
+  color: #aeb8ae;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.tuning-hover {
+  margin: 1rem 0;
+  padding: 0.8rem;
+  border-left: 3px solid #75d89b;
+  background: #19211b;
+}
+.tuning-hover strong {
+  color: #75d89b;
+  font:
+    1.1rem ui-monospace,
+    monospace;
+}
+.tuning-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem 1rem;
+}
+.tuning-grid label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem;
+  color: #aeb8ae;
+  font-size: 0.7rem;
+}
+.tuning-grid output {
+  color: #f6f8f4;
+  font:
+    0.65rem ui-monospace,
+    monospace;
+}
+.tuning-grid input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: #ffb000;
+}
+.tuning-panel footer {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 10%);
 }
 
 .wizard-layer {
@@ -420,6 +515,9 @@ canvas {
 }
 
 @media (max-width: 650px) {
+  .tuning-grid {
+    grid-template-columns: 1fr;
+  }
   .hud {
     top: 0.75rem;
     left: 0.75rem;

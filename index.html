@@ -25,6 +25,7 @@
         <dl id="flight-debug"></dl>
       </aside>
       <button id="reset" class="reset-button">DROHNE RESETTEN</button>
+      <button id="open-tuning" class="tuning-button">DROHNE TUNEN</button>
       <button id="calibrate" class="calibrate-button">INPUT KALIBRIEREN</button>
       <aside class="controller-panel" aria-label="Controller Inspector">
         <div class="controller-panel__title">
@@ -37,6 +38,7 @@
         <div id="controllers" aria-live="polite"></div>
       </aside>
       <div id="calibration" class="wizard-layer" hidden></div>
+      <div id="tuning" class="wizard-layer" hidden></div>
       <div id="loading" role="status">Simulator wird initialisiert …</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
