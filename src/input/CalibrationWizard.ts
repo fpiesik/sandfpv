@@ -1,4 +1,4 @@
-import { MAX_INPUT_DEADBAND, type AxisCalibration } from "./AxisNormalization";
+import type { AxisCalibration } from "./AxisNormalization";
 import {
   INPUT_CONFIGURATION_VERSION,
   saveInputConfiguration,
@@ -97,7 +97,7 @@ export class CalibrationWizard {
     return `<p>Lasse die Sticks los und übernimm die aktuelle Mitte. Throttle verwendet nur Minimum und Maximum.</p>
       <button data-action="center">Aktuelle Position als Mitte</button><div class="wizard-values">${CONTROLS.map(
         (name) =>
-          `<div><strong>${LABELS[name]}</strong><span>CENTER ${this.draft[name].center.toFixed(3)}</span><label>Deadband <input data-deadband="${name}" type="number" min="0" max="${MAX_INPUT_DEADBAND}" step="0.01" value="${this.draft[name].deadband}"></label><label><input data-invert="${name}" type="checkbox" ${this.draft[name].inverted ? "checked" : ""}> Invertieren</label></div>`,
+          `<div><strong>${LABELS[name]}</strong><span>CENTER ${this.draft[name].center.toFixed(3)}</span><label>Deadband <input data-deadband="${name}" type="number" min="0" max="0.99" step="0.01" value="${this.draft[name].deadband}"></label><label><input data-invert="${name}" type="checkbox" ${this.draft[name].inverted ? "checked" : ""}> Invertieren</label></div>`,
       ).join("")}</div>`;
   }
 

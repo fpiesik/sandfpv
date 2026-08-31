@@ -40,13 +40,6 @@ describe("axis normalization", () => {
     expect(normalizeCenteredAxis(-0.55, deadband)).toBeCloseTo(-0.5);
   });
 
-  it("limits legacy deadband values that would disable most stick travel", () => {
-    const legacyCalibration = { ...calibration, deadband: 0.99 };
-
-    expect(normalizeCenteredAxis(0.5, legacyCalibration)).toBeCloseTo(0.375);
-    expect(normalizeThrottleAxis(0.5, legacyCalibration)).toBeGreaterThan(0.7);
-  });
-
   it("inverts centered and throttle axes", () => {
     const inverted = { ...calibration, inverted: true };
     expect(normalizeCenteredAxis(0.9, inverted)).toBe(-1);
