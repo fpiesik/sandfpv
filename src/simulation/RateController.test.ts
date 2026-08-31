@@ -19,10 +19,10 @@ describe("applyRateCurve", () => {
     expect(applyRateCurve(1, 360, 0.7)).toBeCloseTo(2 * Math.PI);
   });
 
-  it("keeps small stick movements responsive at maximum expo", () => {
+  it("keeps at least 80% center authority at maximum expo", () => {
     const output = applyRateCurve(0.1, 360, 1);
 
-    expect(output).toBeGreaterThan(0.03 * 2 * Math.PI);
+    expect(output).toBeGreaterThan(0.08 * 2 * Math.PI);
   });
 
   it("clamps invalid stick and expo ranges", () => {
