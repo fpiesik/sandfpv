@@ -1,6 +1,4 @@
 import RAPIER from "@dimforge/rapier3d-compat";
-import type { ControlState } from "../input/InputSource";
-import { applyRateCurve, RateController } from "./RateController";
 
 export interface DroneConfig {
   mass: number;
@@ -8,15 +6,6 @@ export interface DroneConfig {
   linearDrag: number;
   angularDrag: number;
   motorResponseTime: number;
-  maxRollRate: number;
-  maxPitchRate: number;
-  maxYawRate: number;
-  rateExpo: number;
-  rateKp: number;
-  rateKi: number;
-  rateKd: number;
-  rateIntegralLimit: number;
-  maxControlTorque: number;
 }
 
 export const DEFAULT_DRONE_CONFIG: Readonly<DroneConfig> = {
@@ -25,22 +14,7 @@ export const DEFAULT_DRONE_CONFIG: Readonly<DroneConfig> = {
   linearDrag: 0.2,
   angularDrag: 0.08,
   motorResponseTime: 0.12,
-  maxRollRate: 600,
-  maxPitchRate: 600,
-  maxYawRate: 400,
-  rateExpo: 0.35,
-  rateKp: 0.12,
-  rateKi: 0,
-  rateKd: 0.003,
-  rateIntegralLimit: 2,
-  maxControlTorque: 2.5,
 };
-
-export interface FlightControllerDebug {
-  desiredRates: RAPIER.Vector;
-  actualRates: RAPIER.Vector;
-  torques: RAPIER.Vector;
-}
 
 export interface DronePose {
   position: RAPIER.Vector;
@@ -52,12 +26,6 @@ export class Drone {
   readonly body: RAPIER.RigidBody;
   private motorThrottle = 0;
   private activeConfig: DroneConfig;
-  private readonly rateController = new RateController();
-  private debug: FlightControllerDebug = {
-    desiredRates: { x: 0, y: 0, z: 0 },
-    actualRates: { x: 0, y: 0, z: 0 },
-    torques: { x: 0, y: 0, z: 0 },
-  };
 
   constructor(
     world: RAPIER.World,
@@ -93,24 +61,12 @@ export class Drone {
     return this.activeConfig;
   }
 
-  get flightControllerDebug(): Readonly<FlightControllerDebug> {
-    return this.debug;
-  }
-
   configure(config: Readonly<DroneConfig>): void {
     this.activeConfig = { ...config };
     this.body.setAdditionalMass(config.mass, true);
   }
 
-  update(
-    throttle: number,
-    deltaSeconds: number,
-    controls: Pick<ControlState, "roll" | "pitch" | "yaw"> = {
-      roll: 0,
-      pitch: 0,
-      yaw: 0,
-    },
-  ): void {
+  update(throttle: number, deltaSeconds: number): void {
     // Rapier's user forces persist until explicitly reset. Rebuild them every
     // physics tick instead of accidentally accumulating thrust and drag.
     this.body.resetForces(false);
@@ -131,35 +87,6 @@ export class Drone {
     this.body.addForce(scale(velocity, -this.config.linearDrag), true);
     const angularVelocity = this.body.angvel();
     this.body.addTorque(scale(angularVelocity, -this.config.angularDrag), true);
-
-    // Controller axes are body-local: X roll, Y yaw and Z pitch. Rapier's
-    // angular velocity and applied torque are world-space, so convert both.
-    const actualRates = inverseRotateVector(rotation, angularVelocity);
-    const desiredRates = {
-      x: applyRateCurve(
-        controls.roll,
-        this.config.maxRollRate,
-        this.config.rateExpo,
-      ),
-      y: applyRateCurve(
-        controls.yaw,
-        this.config.maxYawRate,
-        this.config.rateExpo,
-      ),
-      z: applyRateCurve(
-        controls.pitch,
-        this.config.maxPitchRate,
-        this.config.rateExpo,
-      ),
-    };
-    const torques = this.rateController.update(
-      desiredRates,
-      actualRates,
-      deltaSeconds,
-      this.config,
-    );
-    this.body.addTorque(rotateVector(rotation, torques), true);
-    this.debug = { desiredRates, actualRates, torques };
   }
 
   reset(): void {
@@ -170,23 +97,7 @@ export class Drone {
     this.body.resetForces(true);
     this.body.resetTorques(true);
     this.motorThrottle = 0;
-    this.rateController.reset();
-    this.debug = {
-      desiredRates: { x: 0, y: 0, z: 0 },
-      actualRates: { x: 0, y: 0, z: 0 },
-      torques: { x: 0, y: 0, z: 0 },
-    };
   }
-}
-
-function inverseRotateVector(
-  quaternion: RAPIER.Rotation,
-  vector: RAPIER.Vector,
-): RAPIER.Vector {
-  return rotateVector(
-    { x: -quaternion.x, y: -quaternion.y, z: -quaternion.z, w: quaternion.w },
-    vector,
-  );
 }
 
 function scale(vector: RAPIER.Vector, factor: number): RAPIER.Vector {
