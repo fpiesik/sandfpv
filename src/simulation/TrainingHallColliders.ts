@@ -20,6 +20,9 @@ export function createTrainingHallColliders(
 
   const gateSensors = gates.map((gate) => {
     const [x, y, z] = gate.position;
+    const openingWidth = GATE_OPENING.width * gate.scale;
+    const openingHeight = GATE_OPENING.height * gate.scale;
+    const barThickness = GATE_BAR_THICKNESS * gate.scale;
     const rotation = {
       x: 0,
       y: Math.sin(gate.yaw / 2),
@@ -31,28 +34,20 @@ export function createTrainingHallColliders(
       size: [number, number, number];
     }> = [
       {
-        offset: [-GATE_OPENING.width / 2, 0],
-        size: [
-          GATE_BAR_THICKNESS,
-          GATE_OPENING.height + GATE_BAR_THICKNESS * 2,
-          GATE_BAR_THICKNESS,
-        ],
+        offset: [-openingWidth / 2, 0],
+        size: [barThickness, openingHeight + barThickness * 2, barThickness],
       },
       {
-        offset: [GATE_OPENING.width / 2, 0],
-        size: [
-          GATE_BAR_THICKNESS,
-          GATE_OPENING.height + GATE_BAR_THICKNESS * 2,
-          GATE_BAR_THICKNESS,
-        ],
+        offset: [openingWidth / 2, 0],
+        size: [barThickness, openingHeight + barThickness * 2, barThickness],
       },
       {
-        offset: [0, -GATE_OPENING.height / 2],
-        size: [GATE_OPENING.width, GATE_BAR_THICKNESS, GATE_BAR_THICKNESS],
+        offset: [0, -openingHeight / 2],
+        size: [openingWidth, barThickness, barThickness],
       },
       {
-        offset: [0, GATE_OPENING.height / 2],
-        size: [GATE_OPENING.width, GATE_BAR_THICKNESS, GATE_BAR_THICKNESS],
+        offset: [0, openingHeight / 2],
+        size: [openingWidth, barThickness, barThickness],
       },
     ];
     for (const part of frameParts) {
@@ -68,11 +63,7 @@ export function createTrainingHallColliders(
       );
     }
     return world.createCollider(
-      RAPIER.ColliderDesc.cuboid(
-        GATE_OPENING.width / 2,
-        GATE_OPENING.height / 2,
-        0.12,
-      )
+      RAPIER.ColliderDesc.cuboid(openingWidth / 2, openingHeight / 2, 0.12)
         .setTranslation(x, y, z)
         .setRotation(rotation)
         .setSensor(true),

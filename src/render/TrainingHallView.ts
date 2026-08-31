@@ -17,6 +17,9 @@ export class TrainingHallView {
       scene.add(this.createBox(box));
 
     gates.forEach((gate, index) => {
+      const openingWidth = GATE_OPENING.width * gate.scale;
+      const openingHeight = GATE_OPENING.height * gate.scale;
+      const barThickness = GATE_BAR_THICKNESS * gate.scale;
       const group = new THREE.Group();
       group.position.set(...gate.position);
       group.rotation.y = gate.yaw;
@@ -27,21 +30,21 @@ export class TrainingHallView {
         roughness: 0.5,
       });
       const vertical = new THREE.BoxGeometry(
-        GATE_BAR_THICKNESS,
-        GATE_OPENING.height + GATE_BAR_THICKNESS * 2,
-        GATE_BAR_THICKNESS,
+        barThickness,
+        openingHeight + barThickness * 2,
+        barThickness,
       );
       const horizontal = new THREE.BoxGeometry(
-        GATE_OPENING.width,
-        GATE_BAR_THICKNESS,
-        GATE_BAR_THICKNESS,
+        openingWidth,
+        barThickness,
+        barThickness,
       );
-      for (const x of [-GATE_OPENING.width / 2, GATE_OPENING.width / 2]) {
+      for (const x of [-openingWidth / 2, openingWidth / 2]) {
         const bar = new THREE.Mesh(vertical, material);
         bar.position.x = x;
         group.add(bar);
       }
-      for (const y of [-GATE_OPENING.height / 2, GATE_OPENING.height / 2]) {
+      for (const y of [-openingHeight / 2, openingHeight / 2]) {
         const bar = new THREE.Mesh(horizontal, material);
         bar.position.y = y;
         group.add(bar);
@@ -55,7 +58,7 @@ export class TrainingHallView {
         visible: index === 0,
       });
       const trigger = new THREE.Mesh(
-        new THREE.PlaneGeometry(GATE_OPENING.width, GATE_OPENING.height),
+        new THREE.PlaneGeometry(openingWidth, openingHeight),
         triggerMaterial,
       );
       group.add(trigger);

@@ -1,5 +1,7 @@
-export const HALL_SIZE = 40;
-export const HALL_HEIGHT = HALL_SIZE;
+/** Hall footprint: twice the former X span and three times the former Z span. */
+export const HALL_WIDTH = 80;
+export const HALL_DEPTH = 120;
+export const HALL_HEIGHT = 40;
 
 export interface BoxDefinition {
   readonly position: readonly [number, number, number];
@@ -11,16 +13,42 @@ export interface BoxDefinition {
 export interface GateDefinition {
   readonly position: readonly [number, number, number];
   readonly yaw: number;
+  /** Uniform scale relative to the original 3 m x 2.5 m gate. */
+  readonly scale: number;
   readonly color: number;
 }
 
 export const hallSurfaces: readonly BoxDefinition[] = [
-  { position: [0, -0.1, 0], size: [40, 0.2, 40], color: 0x59636b },
-  { position: [0, 40.1, 0], size: [40, 0.2, 40], color: 0x30373d },
-  { position: [0, 20, -20.1], size: [40, 40, 0.2], color: 0x46515a },
-  { position: [0, 20, 20.1], size: [40, 40, 0.2], color: 0x46515a },
-  { position: [-20.1, 20, 0], size: [0.2, 40, 40], color: 0x3c474f },
-  { position: [20.1, 20, 0], size: [0.2, 40, 40], color: 0x3c474f },
+  {
+    position: [0, -0.1, 0],
+    size: [HALL_WIDTH, 0.2, HALL_DEPTH],
+    color: 0x59636b,
+  },
+  {
+    position: [0, HALL_HEIGHT + 0.1, 0],
+    size: [HALL_WIDTH, 0.2, HALL_DEPTH],
+    color: 0x30373d,
+  },
+  {
+    position: [0, HALL_HEIGHT / 2, -HALL_DEPTH / 2 - 0.1],
+    size: [HALL_WIDTH, HALL_HEIGHT, 0.2],
+    color: 0x46515a,
+  },
+  {
+    position: [0, HALL_HEIGHT / 2, HALL_DEPTH / 2 + 0.1],
+    size: [HALL_WIDTH, HALL_HEIGHT, 0.2],
+    color: 0x46515a,
+  },
+  {
+    position: [-HALL_WIDTH / 2 - 0.1, HALL_HEIGHT / 2, 0],
+    size: [0.2, HALL_HEIGHT, HALL_DEPTH],
+    color: 0x3c474f,
+  },
+  {
+    position: [HALL_WIDTH / 2 + 0.1, HALL_HEIGHT / 2, 0],
+    size: [0.2, HALL_HEIGHT, HALL_DEPTH],
+    color: 0x3c474f,
+  },
 ];
 
 export const obstacles: readonly BoxDefinition[] = [
@@ -32,13 +60,21 @@ export const obstacles: readonly BoxDefinition[] = [
   { position: [14, 3, -12], size: [1, 6, 1], color: 0x7f9299 },
 ];
 
-/** Ordered clockwise lap. Gate position is the centre of its opening. */
+/**
+ * Ordered clockwise lap with broad, flowing turns. Gate position is the centre
+ * of its opening; the outermost frame still has at least 10 m wall clearance.
+ */
 export const gates: readonly GateDefinition[] = [
-  { position: [0, 2.2, -6], yaw: 0, color: 0xffb000 },
-  { position: [9, 3.2, -7], yaw: Math.PI / 2, color: 0xff5f57 },
-  { position: [12, 2.4, 7], yaw: Math.PI / 4, color: 0x4dd6a7 },
-  { position: [0, 4.5, 13], yaw: Math.PI / 2, color: 0x67a8ff },
-  { position: [-12, 2.7, 4], yaw: -Math.PI / 4, color: 0xcb72ff },
+  { position: [0, 8, -42], yaw: -Math.PI / 4, scale: 4, color: 0xffb000 },
+  { position: [25, 6, -24], yaw: Math.PI / 4, scale: 3, color: 0xff5f57 },
+  { position: [26, 4, 18], yaw: 0, scale: 2, color: 0x4dd6a7 },
+  { position: [4, 4.5, 43], yaw: -Math.PI / 4, scale: 1, color: 0x67a8ff },
+  {
+    position: [-27, 2.7, 10],
+    yaw: Math.PI / 4,
+    scale: 2 / 3,
+    color: 0xcb72ff,
+  },
 ];
 
 export const GATE_OPENING = { width: 3, height: 2.5 } as const;
