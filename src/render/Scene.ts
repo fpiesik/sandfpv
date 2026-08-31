@@ -26,13 +26,17 @@ export class Scene {
       new THREE.HemisphereLight(0xd9f2ff, 0x293120, 1.5),
     );
 
+    const groundSize = 40;
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
+      new THREE.PlaneGeometry(groundSize, groundSize),
       new THREE.MeshStandardMaterial({ color: 0x465b3c, roughness: 0.9 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    this.scene.add(ground, new THREE.GridHelper(2, 40, 0x75826c, 0x536149));
+    this.scene.add(
+      ground,
+      new THREE.GridHelper(groundSize, 800, 0x75826c, 0x536149),
+    );
 
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0x171c19,
