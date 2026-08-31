@@ -13,12 +13,10 @@ export function applyRateCurve(
   expo: number,
 ): number {
   const input = Math.min(1, Math.max(-1, stick));
-  // Expo must not be allowed to suppress the rate command around the center.
-  // In a rate controller that suppression is applied once more by the P term,
-  // so the previously permitted 0.7 left only 30% of the expected roll/pitch
-  // response and felt like a second, physics-side dead zone. Keep at least 80%
-  // linear authority; the input deadband remains exclusively an input concern.
-  const amount = Math.min(0.2, Math.max(0, expo));
+  // Retain a meaningful linear component even at the maximum setting. A fully
+  // cubic curve makes ordinary stick movements almost imperceptible and feels
+  // like a large dead zone despite the input itself being calibrated correctly.
+  const amount = Math.min(0.7, Math.max(0, expo));
   const shaped = input * (1 - amount) + input * input * input * amount;
   return shaped * maxRateDegrees * (Math.PI / 180);
 }

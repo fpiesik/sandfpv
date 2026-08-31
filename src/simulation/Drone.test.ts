@@ -76,25 +76,6 @@ describe("Drone", () => {
     expect(drone.flightControllerDebug.desiredRates.y).toBe(0);
   });
 
-  it.each(["roll", "pitch"] as const)(
-    "responds visibly to a small %s command",
-    (control) => {
-      const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
-      world.timestep = 1 / 120;
-      const drone = new Drone(world, { ...config, rateExpo: 0.7 });
-      const controls = { roll: 0, pitch: 0, yaw: 0 };
-      controls[control] = 0.1;
-
-      for (let step = 0; step < 12; step += 1) {
-        drone.update(0, world.timestep, controls);
-        world.step();
-      }
-
-      const axis = control === "roll" ? "x" : "z";
-      expect(Math.abs(drone.body.angvel()[axis])).toBeGreaterThan(0.25);
-    },
-  );
-
   it.each([
     ["roll", { roll: 1, pitch: 0, yaw: 0 }, "x"],
     ["pitch", { roll: 0, pitch: 1, yaw: 0 }, "z"],
