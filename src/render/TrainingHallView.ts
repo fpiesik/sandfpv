@@ -69,6 +69,53 @@ export class TrainingHallView {
       });
       scene.add(group);
     });
+    this.addReferenceGeometry(scene);
+  }
+
+  private addReferenceGeometry(scene: THREE.Scene): void {
+    const lineMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe7ddbd,
+      roughness: 0.9,
+    });
+    // Closely spaced court markings make ground speed and altitude legible in FPV.
+    for (let x = -12; x <= 12; x += 1.5) {
+      const line = new THREE.Mesh(
+        new THREE.BoxGeometry(0.025, 0.006, 43),
+        lineMaterial,
+      );
+      line.position.set(x, 0.004, 0);
+      scene.add(line);
+    }
+    for (let z = -21; z <= 21; z += 1.5) {
+      const line = new THREE.Mesh(
+        new THREE.BoxGeometry(25, 0.006, 0.025),
+        lineMaterial,
+      );
+      line.position.set(0, 0.004, z);
+      scene.add(line);
+    }
+
+    const beamMaterial = new THREE.MeshStandardMaterial({
+      color: 0x252d32,
+      roughness: 0.75,
+    });
+    for (let z = -21; z <= 21; z += 3) {
+      const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(27, 0.12, 0.12),
+        beamMaterial,
+      );
+      beam.position.set(0, 8.82, z);
+      beam.castShadow = true;
+      scene.add(beam);
+    }
+    for (const x of [-9, 0, 9]) {
+      const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.1, 45),
+        beamMaterial,
+      );
+      beam.position.set(x, 8.74, 0);
+      scene.add(beam);
+    }
   }
 
   setExpectedGate(index: number): void {

@@ -1,7 +1,7 @@
-/** Hall footprint: twice the former X span and three times the former Z span. */
-export const HALL_WIDTH = 80;
-export const HALL_DEPTH = 120;
-export const HALL_HEIGHT = 40;
+/** Standard German triple sports hall dimensions, in metres. */
+export const HALL_WIDTH = 27;
+export const HALL_DEPTH = 45;
+export const HALL_HEIGHT = 9;
 
 export interface BoxDefinition {
   readonly position: readonly [number, number, number];
@@ -13,7 +13,7 @@ export interface BoxDefinition {
 export interface GateDefinition {
   readonly position: readonly [number, number, number];
   readonly yaw: number;
-  /** Uniform scale relative to the original 3 m x 2.5 m gate. */
+  /** Uniform scale relative to the 0.8 m x 0.7 m whoop gate. */
   readonly scale: number;
   readonly color: number;
 }
@@ -52,30 +52,35 @@ export const hallSurfaces: readonly BoxDefinition[] = [
 ];
 
 export const obstacles: readonly BoxDefinition[] = [
-  { position: [-6, 1, -3], size: [3, 2, 3], color: 0xd38b35 },
-  { position: [4, 0.75, -9], size: [5, 1.5, 1.5], yaw: 0.35, color: 0x68a6a0 },
-  { position: [10, 2, 2], size: [1.2, 4, 5], color: 0xc55a4c },
-  { position: [-11, 1.5, 8], size: [4, 3, 1.2], yaw: -0.45, color: 0x7788b8 },
-  { position: [1, 0.5, 10], size: [7, 1, 2], color: 0xd8b64c },
-  { position: [14, 3, -12], size: [1, 6, 1], color: 0x7f9299 },
+  { position: [-4.5, 0.3, -5], size: [0.8, 0.6, 0.8], color: 0xd38b35 },
+  {
+    position: [3, 0.2, -11],
+    size: [1.5, 0.4, 0.4],
+    yaw: 0.35,
+    color: 0x68a6a0,
+  },
+  { position: [7, 0.7, 1], size: [0.35, 1.4, 1.2], color: 0xc55a4c },
+  {
+    position: [-7, 0.45, 8],
+    size: [1.2, 0.9, 0.3],
+    yaw: -0.45,
+    color: 0x7788b8,
+  },
+  { position: [1, 0.15, 13], size: [2, 0.3, 0.6], color: 0xd8b64c },
+  { position: [9, 1, -14], size: [0.25, 2, 0.25], color: 0x7f9299 },
 ];
 
 /**
  * Ordered clockwise lap with broad, flowing turns. Gate position is the centre
- * of its opening; the outermost frame still has at least 10 m wall clearance.
+ * of its opening; the outermost frame retains safe wall clearance.
  */
 export const gates: readonly GateDefinition[] = [
-  { position: [0, 8, -42], yaw: -Math.PI / 4, scale: 4, color: 0xffb000 },
-  { position: [25, 6, -24], yaw: Math.PI / 4, scale: 3, color: 0xff5f57 },
-  { position: [26, 4, 18], yaw: 0, scale: 2, color: 0x4dd6a7 },
-  { position: [4, 4.5, 43], yaw: -Math.PI / 4, scale: 1, color: 0x67a8ff },
-  {
-    position: [-27, 2.7, 10],
-    yaw: Math.PI / 4,
-    scale: 2 / 3,
-    color: 0xcb72ff,
-  },
+  { position: [0, 1.2, -17], yaw: -Math.PI / 6, scale: 1, color: 0xffb000 },
+  { position: [8, 1, -9], yaw: Math.PI / 4, scale: 0.9, color: 0xff5f57 },
+  { position: [8.5, 0.8, 7], yaw: 0, scale: 0.8, color: 0x4dd6a7 },
+  { position: [0, 1.1, 17], yaw: -Math.PI / 4, scale: 0.75, color: 0x67a8ff },
+  { position: [-8.5, 0.65, 5], yaw: Math.PI / 4, scale: 0.7, color: 0xcb72ff },
 ];
 
-export const GATE_OPENING = { width: 3, height: 2.5 } as const;
-export const GATE_BAR_THICKNESS = 0.28;
+export const GATE_OPENING = { width: 0.8, height: 0.7 } as const;
+export const GATE_BAR_THICKNESS = 0.06;

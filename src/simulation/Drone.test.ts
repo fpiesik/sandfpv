@@ -5,9 +5,13 @@ import { Drone, type DroneConfig } from "./Drone";
 const TEST_CONFIG: DroneConfig = {
   mass: 0.025,
   maxThrust: 1,
-  linearDrag: 0,
+  thrustExponent: 2,
+  bodyDrag: { x: 0, y: 0, z: 0 },
+  rotorDrag: 0,
+  inertia: { x: 0.00001, y: 0.00002, z: 0.00001 },
   angularDrag: 0,
-  motorResponseTime: 0.1,
+  motorSpoolUpTime: 0.1,
+  motorSpoolDownTime: 0.02,
   maxRates: { roll: 10, pitch: 10, yaw: 8 },
   rateExpo: 0.5,
   ratePid: { kp: 0.001, ki: 0, kd: 0 },
@@ -48,7 +52,7 @@ describe("Drone", () => {
       ...TEST_CONFIG,
       mass: 0.05,
       maxThrust: 0.4,
-      motorResponseTime: 0.035,
+      motorSpoolUpTime: 0.035,
     });
 
     for (let step = 0; step < 240; step += 1) {
@@ -56,7 +60,7 @@ describe("Drone", () => {
       world.step();
     }
 
-    expect(drone.body.userForce().y).toBeCloseTo(0.004, 5);
+    expect(drone.body.userForce().y).toBeCloseTo(0.00004, 5);
     expect(drone.body.linvel().y).toBeLessThan(0);
 
     for (let step = 0; step < 120; step += 1) {
@@ -66,6 +70,19 @@ describe("Drone", () => {
 
     expect(drone.currentMotorThrottle).toBeCloseTo(0, 5);
     expect(drone.body.userForce().y).toBeCloseTo(0, 5);
+  });
+
+  it("uses nonlinear thrust and a faster spool-down response", () => {
+    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    const drone = new Drone(world, TEST_CONFIG);
+    drone.applyThrottle(1, 0.1);
+    expect(drone.currentMotorThrottle).toBeCloseTo(1 - Math.exp(-1));
+    const expectedThrust = drone.currentMotorThrottle ** 2;
+    expect(drone.body.userForce().y).toBeCloseTo(expectedThrust);
+
+    const beforeCut = drone.currentMotorThrottle;
+    drone.applyThrottle(0, 0.02);
+    expect(drone.currentMotorThrottle).toBeCloseTo(beforeCut * Math.exp(-1));
   });
 
   it("resets transform, velocities, forces, and motor state", () => {
