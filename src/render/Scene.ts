@@ -2,15 +2,16 @@ import * as THREE from "three";
 
 export class Scene {
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
   readonly drone = new THREE.Group();
+  private readonly fpvCamera = new THREE.PerspectiveCamera(95, 1, 0.01, 200);
+  private readonly debugCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
   private readonly renderer: THREE.WebGLRenderer;
+  private fpvActive = true;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene.background = new THREE.Color(0x9eb7bd);
     this.scene.fog = new THREE.Fog(0x9eb7bd, 25, 80);
-    this.camera.position.set(0.3, 0.22, 0.38);
-    this.camera.lookAt(0, 0.08, 0);
+    this.debugCamera.position.set(0.3, 0.22, 0.38);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -58,20 +59,50 @@ export class Scene {
       }
     }
     this.drone.traverse((object) => (object.castShadow = true));
+    // Three.js cameras look down local -Z; the small offset represents the
+    // camera mounted at the front of the frame.
+    this.fpvCamera.position.set(0, 0.012, -0.024);
+    this.drone.add(this.fpvCamera);
     this.scene.add(this.drone);
     this.resize();
     addEventListener("resize", this.resize);
   }
 
   render(): void {
-    this.renderer.render(this.scene, this.camera);
+    if (!this.fpvActive) {
+      const chaseOffset = new THREE.Vector3(0.34, 0.2, 0.42).applyQuaternion(
+        this.drone.quaternion,
+      );
+      this.debugCamera.position.lerp(
+        this.drone.position.clone().add(chaseOffset),
+        0.12,
+      );
+      this.debugCamera.lookAt(this.drone.position);
+    }
+    this.renderer.render(
+      this.scene,
+      this.fpvActive ? this.fpvCamera : this.debugCamera,
+    );
+  }
+
+  setFpvSettings(angleDegrees: number, fovDegrees: number): void {
+    this.fpvCamera.rotation.x = THREE.MathUtils.degToRad(angleDegrees);
+    this.fpvCamera.fov = fovDegrees;
+    this.fpvCamera.updateProjectionMatrix();
+  }
+
+  toggleCamera(): boolean {
+    this.fpvActive = !this.fpvActive;
+    return this.fpvActive;
   }
 
   private readonly resize = (): void => {
     const { clientWidth: width, clientHeight: height } =
       this.renderer.domElement;
     this.renderer.setSize(width, height, false);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    for (const camera of [this.fpvCamera, this.debugCamera]) {
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
   };
 }
