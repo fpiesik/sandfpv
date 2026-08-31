@@ -69,6 +69,8 @@ export class FlightController {
       );
     }
     this.previousError = error;
+    // Like forces, Rapier's user torques persist until explicitly cleared.
+    this.drone.body.resetTorques(false);
     this.drone.body.addTorque(rotate(rotation, localTorque), true);
     this.debug = {
       mode: controls.selfLevel ? "ANGLE" : "ACRO",

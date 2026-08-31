@@ -41,6 +41,33 @@ describe("Drone", () => {
     expect(Math.abs(drone.body.linvel().y)).toBeLessThan(1e-5);
   });
 
+  it("replaces the motor force each step instead of accumulating thrust", () => {
+    const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    world.timestep = 1 / 120;
+    const drone = new Drone(world, {
+      ...TEST_CONFIG,
+      mass: 0.05,
+      maxThrust: 0.4,
+      motorResponseTime: 0.035,
+    });
+
+    for (let step = 0; step < 240; step += 1) {
+      drone.applyThrottle(0.01, world.timestep);
+      world.step();
+    }
+
+    expect(drone.body.userForce().y).toBeCloseTo(0.004, 5);
+    expect(drone.body.linvel().y).toBeLessThan(0);
+
+    for (let step = 0; step < 120; step += 1) {
+      drone.applyThrottle(0, world.timestep);
+      world.step();
+    }
+
+    expect(drone.currentMotorThrottle).toBeCloseTo(0, 5);
+    expect(drone.body.userForce().y).toBeCloseTo(0, 5);
+  });
+
   it("resets transform, velocities, forces, and motor state", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(world, TEST_CONFIG, {
