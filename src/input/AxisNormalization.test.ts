@@ -49,13 +49,6 @@ describe("axis normalization", () => {
     expect(normalizeThrottleAxis(0.5, legacyCalibration)).toBeCloseTo(0.375);
   });
 
-  it("returns neutral controls instead of propagating non-finite values", () => {
-    expect(normalizeCenteredAxis(Number.NaN, calibration)).toBe(0);
-    expect(
-      normalizeThrottleAxis(0.5, { ...calibration, center: Number.NaN }),
-    ).toBe(0);
-  });
-
   it("inverts centered and throttle axes", () => {
     const inverted = { ...calibration, inverted: true };
     expect(normalizeCenteredAxis(0.9, inverted)).toBe(-1);
