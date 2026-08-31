@@ -63,6 +63,26 @@ export interface DronePose {
 
 const ZERO = { x: 0, y: 0, z: 0 };
 
+/**
+ * The rounded collision hull avoids the zero-area edge/edge contacts produced
+ * by a tiny sharp cuboid hitting the much larger course geometry. Those
+ * degenerate contacts can make Rapier's WASM contact solver panic instead of
+ * returning a collision response.
+ */
+function droneCollisionShape(
+  config: Readonly<DroneConfig>,
+): RAPIER.RoundCuboid {
+  const halfWidth = config.wheelbaseM / 2;
+  const halfHeight = config.colliderHeightM / 2;
+  const borderRadius = Math.min(halfWidth, halfHeight) * 0.25;
+  return new RAPIER.RoundCuboid(
+    halfWidth - borderRadius,
+    halfHeight - borderRadius,
+    halfWidth - borderRadius,
+    borderRadius,
+  );
+}
+
 /** Generic rigid-body multicopter model with body-rate (Acro) control. */
 export class Drone {
   readonly body: RAPIER.RigidBody;
@@ -97,11 +117,7 @@ export class Drone {
         .setCanSleep(false),
     );
     this.collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(
-        config.wheelbaseM / 2,
-        config.colliderHeightM / 2,
-        config.wheelbaseM / 2,
-      ),
+      new RAPIER.ColliderDesc(droneCollisionShape(config)),
       this.body,
     );
     this.applyMassProperties(config);
@@ -123,13 +139,7 @@ export class Drone {
 
   configure(config: Readonly<DroneConfig>): void {
     this.activeConfig = structuredClone(config);
-    this.collider.setShape(
-      new RAPIER.Cuboid(
-        config.wheelbaseM / 2,
-        config.colliderHeightM / 2,
-        config.wheelbaseM / 2,
-      ),
-    );
+    this.collider.setShape(droneCollisionShape(config));
     this.applyMassProperties(config);
     this.rateController.reset();
   }

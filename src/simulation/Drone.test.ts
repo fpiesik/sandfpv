@@ -73,6 +73,38 @@ describe("Drone", () => {
     expect(Number.isFinite(drone.body.linvel().y)).toBe(true);
   });
 
+  it("uses a rounded hull and survives high-speed edge impacts", () => {
+    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    world.timestep = 1 / 120;
+    const eventQueue = new RAPIER.EventQueue(true);
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(0.1, 5, 5)
+        .setTranslation(0, 0, 0)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+    );
+    const drone = new Drone(world, config, {
+      position: { x: -1, y: 1, z: 0 },
+      rotation: {
+        x: 0,
+        y: 0,
+        z: Math.sin(Math.PI / 8),
+        w: Math.cos(Math.PI / 8),
+      },
+    });
+    drone.body.setLinvel({ x: 30, y: 0, z: 0 }, true);
+
+    expect(drone.body.collider(0).shape).toBeInstanceOf(RAPIER.RoundCuboid);
+    expect(() => {
+      for (let step = 0; step < 240; step += 1) {
+        drone.update(0, world.timestep);
+        world.step(eventQueue);
+        eventQueue.drainCollisionEvents(() => undefined);
+      }
+    }).not.toThrow();
+    expect(Number.isFinite(drone.body.translation().x)).toBe(true);
+    expect(drone.body.translation().x).toBeLessThan(0);
+  });
+
   it("creates body torque from an acro rate command", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(world, {
