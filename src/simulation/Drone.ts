@@ -92,6 +92,18 @@ export class Drone {
     );
   }
 
+  /** Applies live tuning, including physical properties owned by Rapier. */
+  applyConfig(config: DroneConfig): void {
+    validateConfig(config);
+    Object.assign(this.config, config, {
+      maxRates: { ...config.maxRates },
+      ratePid: { ...config.ratePid },
+    });
+    this.collider.setMass(config.mass);
+    this.body.setLinearDamping(config.linearDrag);
+    this.body.setAngularDamping(config.angularDrag);
+  }
+
   get currentMotorThrottle(): number {
     return this.motorThrottle;
   }
