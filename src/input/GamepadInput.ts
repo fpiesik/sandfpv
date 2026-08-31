@@ -41,6 +41,8 @@ export class GamepadInput implements InputSource {
       roll: normalizeCenteredAxis(raw("roll"), calibration.roll),
       pitch: normalizeCenteredAxis(raw("pitch"), calibration.pitch),
       yaw: normalizeCenteredAxis(raw("yaw"), calibration.yaw),
+      selfLevel:
+        gamepad.buttons[this.configuration.selfLevelButton]?.pressed ?? false,
     };
   }
 }

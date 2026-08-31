@@ -1,13 +1,14 @@
 import type { AxisCalibration } from "./AxisNormalization";
 import type { ControlName } from "./InputSource";
 
-export const INPUT_CONFIGURATION_VERSION = 1;
-export const INPUT_CONFIGURATION_KEY = "sandfpv.input.v1";
+export const INPUT_CONFIGURATION_VERSION = 2;
+export const INPUT_CONFIGURATION_KEY = "sandfpv.input.v2";
 
 export interface InputConfiguration {
   readonly version: typeof INPUT_CONFIGURATION_VERSION;
   readonly gamepadId: string;
   readonly axes: Record<ControlName, AxisCalibration>;
+  readonly selfLevelButton: number;
 }
 
 export function loadInputConfiguration(
@@ -21,6 +22,7 @@ export function loadInputConfiguration(
       value.version !== INPUT_CONFIGURATION_VERSION ||
       typeof value.gamepadId !== "string" ||
       !value.axes ||
+      !Number.isInteger(value.selfLevelButton) ||
       !["throttle", "yaw", "pitch", "roll"].every((name) => {
         const axis = value.axes?.[name as ControlName];
         return (

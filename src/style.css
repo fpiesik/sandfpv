@@ -388,6 +388,37 @@ canvas {
   font-size: 0.7rem;
 }
 
+.debug-panel {
+  position: fixed;
+  top: 6rem;
+  left: 1.5rem;
+  min-width: 17rem;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid #75d89b;
+  background: rgb(10 14 11 / 78%);
+  font:
+    0.65rem ui-monospace,
+    monospace;
+}
+.debug-panel > small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #8f9c91;
+}
+.debug-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.8rem;
+  margin-bottom: 0;
+}
+.debug-panel dt {
+  color: #8f9c91;
+}
+.debug-panel dd {
+  margin: 0;
+  text-align: right;
+}
+
 @media (max-width: 650px) {
   .hud {
     top: 0.75rem;

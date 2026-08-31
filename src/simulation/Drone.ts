@@ -11,16 +11,39 @@ export interface DroneConfig {
   readonly angularDrag: number;
   /** Time constant of the first-order motor response, in seconds. */
   readonly motorResponseTime: number;
+  /** Maximum body rates in radians per second. */
+  readonly maxRates: {
+    readonly roll: number;
+    readonly pitch: number;
+    readonly yaw: number;
+  };
+  readonly rateExpo: number;
+  readonly ratePid: {
+    readonly kp: number;
+    readonly ki: number;
+    readonly kd: number;
+  };
+  readonly integralLimit: number;
+  readonly maxTorque: number;
+  readonly angleMaxTilt: number;
+  readonly angleLevelGain: number;
 }
 
 /** A high-performance 65 mm 1S whoop at approximately 25 g AUW. */
 export const AIR65_II_FREESTYLE_CONFIG: DroneConfig = {
   mass: 0.025,
-  // About 5.5:1 thrust-to-weight: deliberately below the 6.3:1 Champion.
-  maxThrust: 0.025 * 9.81 * 5.5,
+  // 5:1 thrust-to-weight puts hover at approximately 20% throttle.
+  maxThrust: 0.025 * 9.81 * 5,
   linearDrag: 0.18,
   angularDrag: 0.12,
   motorResponseTime: 0.035,
+  maxRates: { roll: 12, pitch: 12, yaw: 8 },
+  rateExpo: 0.65,
+  ratePid: { kp: 0.00012, ki: 0.000025, kd: 0.000002 },
+  integralLimit: 3,
+  maxTorque: 0.003,
+  angleMaxTilt: Math.PI / 4,
+  angleLevelGain: 5,
 };
 
 export interface DroneSpawn {
@@ -107,7 +130,7 @@ export class Drone {
 }
 
 function validateConfig(config: DroneConfig): void {
-  const positive: Array<keyof DroneConfig> = [
+  const positive: Array<"mass" | "maxThrust" | "motorResponseTime"> = [
     "mass",
     "maxThrust",
     "motorResponseTime",
@@ -123,4 +146,20 @@ function validateConfig(config: DroneConfig): void {
     config.angularDrag < 0
   )
     throw new RangeError("Drag coefficients must be non-negative");
+  const tuning = [
+    ...Object.values(config.maxRates),
+    ...Object.values(config.ratePid),
+    config.integralLimit,
+    config.maxTorque,
+    config.angleMaxTilt,
+    config.angleLevelGain,
+  ];
+  if (tuning.some((value) => !Number.isFinite(value) || value < 0))
+    throw new RangeError("Flight-controller tuning must be non-negative");
+  if (
+    !Number.isFinite(config.rateExpo) ||
+    config.rateExpo < 0 ||
+    config.rateExpo > 1
+  )
+    throw new RangeError("Rate expo must be between zero and one");
 }

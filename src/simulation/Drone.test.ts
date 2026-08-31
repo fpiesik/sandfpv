@@ -8,6 +8,13 @@ const TEST_CONFIG: DroneConfig = {
   linearDrag: 0,
   angularDrag: 0,
   motorResponseTime: 0.1,
+  maxRates: { roll: 10, pitch: 10, yaw: 8 },
+  rateExpo: 0.5,
+  ratePid: { kp: 0.001, ki: 0, kd: 0 },
+  integralLimit: 1,
+  maxTorque: 0.01,
+  angleMaxTilt: Math.PI / 4,
+  angleLevelGain: 5,
 };
 
 beforeAll(async () => RAPIER.init());
