@@ -4,6 +4,7 @@ import {
   cloneDefaultTuning,
   loadDroneTuning,
   saveDroneTuning,
+  hoverThrottle,
 } from "./DroneTuning";
 
 class MemoryStorage implements Storage {
@@ -50,5 +51,15 @@ describe("drone tuning persistence", () => {
     saveDroneTuning(tuning, storage);
 
     expect(loadDroneTuning(storage)).toEqual(tuning);
+  });
+
+  it("inverts the nonlinear thrust curve for the hover display", () => {
+    expect(
+      hoverThrottle({
+        mass: 0.025,
+        maxThrust: 0.025 * 9.81 * 4,
+        thrustExponent: 2,
+      }),
+    ).toBeCloseTo(0.5);
   });
 });

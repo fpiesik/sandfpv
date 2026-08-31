@@ -1,14 +1,18 @@
 import { AIR65_II_FREESTYLE_CONFIG, type DroneConfig } from "./Drone";
 
-export const DRONE_TUNING_STORAGE_KEY = "sandfpv.drone-tuning.v1";
+export const DRONE_TUNING_STORAGE_KEY = "sandfpv.drone-tuning.v2";
 
 export type DroneTuning = Pick<
   DroneConfig,
   | "mass"
   | "maxThrust"
-  | "linearDrag"
+  | "thrustExponent"
+  | "bodyDrag"
+  | "rotorDrag"
+  | "inertia"
   | "angularDrag"
-  | "motorResponseTime"
+  | "motorSpoolUpTime"
+  | "motorSpoolDownTime"
   | "rateExpo"
   | "integralLimit"
   | "maxTorque"
@@ -24,6 +28,8 @@ export function cloneDefaultTuning(): DroneTuning {
     ...AIR65_II_FREESTYLE_CONFIG,
     maxRates: { ...AIR65_II_FREESTYLE_CONFIG.maxRates },
     ratePid: { ...AIR65_II_FREESTYLE_CONFIG.ratePid },
+    bodyDrag: { ...AIR65_II_FREESTYLE_CONFIG.bodyDrag },
+    inertia: { ...AIR65_II_FREESTYLE_CONFIG.inertia },
   };
 }
 
@@ -39,6 +45,8 @@ export function loadDroneTuning(storage: Storage = localStorage): DroneTuning {
       ...saved,
       maxRates: { ...defaults.maxRates, ...saved.maxRates },
       ratePid: { ...defaults.ratePid, ...saved.ratePid },
+      bodyDrag: { ...defaults.bodyDrag, ...saved.bodyDrag },
+      inertia: { ...defaults.inertia, ...saved.inertia },
     };
   } catch {
     return defaults;
@@ -64,7 +72,7 @@ export class DroneTuningPanel {
   }
 
   private render(tuning: DroneTuning): void {
-    const hover = (tuning.mass * 9.81 * 100) / tuning.maxThrust;
+    const hover = hoverThrottle(tuning) * 100;
     this.element.innerHTML = `
       <form class="tuning-panel" aria-labelledby="tuning-title">
         <header><div><small>AIR65 · LIVE SETUP</small><h2 id="tuning-title">DROHNEN-TUNING</h2></div><button type="button" data-close aria-label="Schließen">×</button></header>
@@ -73,8 +81,13 @@ export class DroneTuningPanel {
         <div class="tuning-grid">
           ${this.field("mass", "Gewicht", tuning.mass * 1000, 15, 50, 0.5, "g")}
           ${this.field("maxThrust", "Max. Schub", tuning.maxThrust, 0.4, 2.5, 0.01, "N")}
-          ${this.field("motorResponseTime", "Motor-Reaktion", tuning.motorResponseTime * 1000, 10, 150, 1, "ms")}
-          ${this.field("linearDrag", "Linearer Drag", tuning.linearDrag, 0, 1, 0.01, "")}
+          ${this.field("thrustExponent", "Schub-Exponent", tuning.thrustExponent, 1, 2.5, 0.01, "")}
+          ${this.field("motorSpoolUpTime", "Spool-up", tuning.motorSpoolUpTime * 1000, 10, 150, 1, "ms")}
+          ${this.field("motorSpoolDownTime", "Spool-down", tuning.motorSpoolDownTime * 1000, 5, 100, 1, "ms")}
+          ${this.field("bodyDragX", "Körper-Drag X", tuning.bodyDrag.x, 0, 0.1, 0.001, "")}
+          ${this.field("bodyDragY", "Körper-Drag Y", tuning.bodyDrag.y, 0, 0.1, 0.001, "")}
+          ${this.field("bodyDragZ", "Körper-Drag Z", tuning.bodyDrag.z, 0, 0.1, 0.001, "")}
+          ${this.field("rotorDrag", "Rotor-Drag lateral", tuning.rotorDrag, 0, 0.1, 0.001, "")}
           ${this.field("angularDrag", "Angularer Drag", tuning.angularDrag, 0, 1, 0.01, "")}
           ${this.field("rateExpo", "Rate Expo", tuning.rateExpo, 0, 1, 0.01, "")}
           ${this.field("rollRate", "Roll Rate", tuning.maxRates.roll, 1, 25, 0.1, "rad/s")}
@@ -106,8 +119,15 @@ export class DroneTuningPanel {
         ...tuning,
         mass: number("mass") / 1000,
         maxThrust: number("maxThrust"),
-        motorResponseTime: number("motorResponseTime") / 1000,
-        linearDrag: number("linearDrag"),
+        thrustExponent: number("thrustExponent"),
+        motorSpoolUpTime: number("motorSpoolUpTime") / 1000,
+        motorSpoolDownTime: number("motorSpoolDownTime") / 1000,
+        bodyDrag: {
+          x: number("bodyDragX"),
+          y: number("bodyDragY"),
+          z: number("bodyDragZ"),
+        },
+        rotorDrag: number("rotorDrag"),
         angularDrag: number("angularDrag"),
         rateExpo: number("rateExpo"),
         maxRates: {
@@ -120,7 +140,7 @@ export class DroneTuningPanel {
       tuning = next;
       const output = this.element.querySelector<HTMLElement>("[data-hover]");
       if (output)
-        output.textContent = `${((next.mass * 9.81 * 100) / next.maxThrust).toFixed(1)} %`;
+        output.textContent = `${(hoverThrottle(next) * 100).toFixed(1)} %`;
       this.element
         .querySelectorAll<HTMLInputElement>("input")
         .forEach((input) => {
@@ -143,4 +163,12 @@ export class DroneTuningPanel {
   ): string {
     return `<label><span>${label}</span><output>${value} ${unit}</output><input name="${name}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" data-unit="${unit}"></label>`;
   }
+}
+
+export function hoverThrottle(
+  tuning: Pick<DroneTuning, "mass" | "maxThrust" | "thrustExponent">,
+): number {
+  return (
+    ((tuning.mass * 9.81) / tuning.maxThrust) ** (1 / tuning.thrustExponent)
+  );
 }
