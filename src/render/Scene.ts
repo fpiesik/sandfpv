@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createTrainingHall } from "./TrainingHall";
 
 export type CameraMode = "fpv" | "debug";
 
@@ -18,8 +17,8 @@ export class Scene {
   private mode: CameraMode = "fpv";
 
   constructor(canvas: HTMLCanvasElement) {
-    this.scene.background = new THREE.Color(0x111820);
-    this.scene.fog = new THREE.Fog(0x111820, 25, 55);
+    this.scene.background = new THREE.Color(0x9eb7bd);
+    this.scene.fog = new THREE.Fog(0x9eb7bd, 25, 80);
     this.debugCamera.position.set(8, 6, 10);
     this.debugCamera.lookAt(0, 1.5, 0);
 
@@ -28,14 +27,21 @@ export class Scene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    const sunlight = new THREE.DirectionalLight(0xfff4dc, 2.4);
-    sunlight.position.set(5, 7.5, 4);
+    const sunlight = new THREE.DirectionalLight(0xfff4dc, 3);
+    sunlight.position.set(5, 10, 4);
     sunlight.castShadow = true;
     this.scene.add(
       sunlight,
-      new THREE.HemisphereLight(0xcce8ff, 0x20242a, 1.8),
+      new THREE.HemisphereLight(0xd9f2ff, 0x293120, 1.5),
     );
-    this.scene.add(createTrainingHall());
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.MeshStandardMaterial({ color: 0x465b3c, roughness: 0.9 }),
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    this.scene.add(ground, new THREE.GridHelper(40, 40, 0x75826c, 0x536149));
 
     const body = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.32, 0),

@@ -1,7 +1,5 @@
 import "./style.css";
 import { FixedTimestep } from "./core/FixedTimestep";
-import { GATES } from "./course/CourseLayout";
-import { GateCourse, type CourseProgress } from "./course/GateCourse";
 import { ControllerInspector } from "./input/ControllerInspector";
 import { CalibrationWizard } from "./input/CalibrationWizard";
 import { GamepadInput } from "./input/GamepadInput";
@@ -14,7 +12,6 @@ import { DroneConfigurationPanel } from "./simulation/DroneConfiguration";
 import { FlightDebugPanel } from "./simulation/FlightDebugPanel";
 import type { ControlState } from "./input/InputSource";
 import { stickPositions } from "./input/StickVisualizer";
-import { GateCollisionHandler } from "./simulation/GateCollisionHandler";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -41,15 +38,7 @@ async function start(): Promise<void> {
   document
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
-  const { world, drone, eventQueue, gateByCollider } =
-    await createPhysicsWorld();
-  const course = new GateCourse(GATES.map(({ id }) => id));
-  const gateCollisions = new GateCollisionHandler(
-    eventQueue,
-    gateByCollider,
-    drone.body.handle,
-    course,
-  );
+  const { world, drone } = await createPhysicsWorld();
   const debugElement = document.querySelector<HTMLElement>("#flight-debug");
   if (!debugElement) throw new Error("Flight debug panel is missing");
   const flightDebug = new FlightDebugPanel(debugElement);
@@ -65,10 +54,7 @@ async function start(): Promise<void> {
   document
     .querySelector("#configure-drone")
     ?.addEventListener("click", () => droneConfiguration.open());
-  const reset = (): void => {
-    drone.reset();
-    course.reset();
-  };
+  const reset = (): void => drone.reset();
   document.querySelector("#reset")?.addEventListener("click", reset);
   addEventListener("keydown", (event) => {
     if (event.code === "KeyR" && !event.repeat) reset();
@@ -112,8 +98,7 @@ async function start(): Promise<void> {
         yaw: controls.yaw,
       });
       world.timestep = stepSeconds;
-      world.step(eventQueue);
-      gateCollisions.drain(world);
+      world.step();
     });
     previousTime = time;
 
@@ -124,17 +109,10 @@ async function start(): Promise<void> {
     view.render();
     fps += (1000 / Math.max(frameMilliseconds, 1) - fps) * 0.08;
     renderHud(controls, fps);
-    renderCourse(course.progress);
     flightDebug.render(drone.flightControllerDebug);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
-}
-
-function renderCourse(progress: CourseProgress): void {
-  setText("course-next", `GATE ${progress.expectedGate}`);
-  setText("course-progress", `${progress.completed} / ${progress.total}`);
-  setText("course-laps", `RUNDE ${progress.laps}`);
 }
 
 function combineControls(
