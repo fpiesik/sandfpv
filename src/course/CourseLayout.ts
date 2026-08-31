@@ -14,7 +14,7 @@ export interface GatePlacement {
 
 export const HALL_WIDTH = 108;
 export const HALL_DEPTH = 72;
-export const HALL_HEIGHT = 40;
+export const HALL_HEIGHT = 12;
 
 export const HALL_BOXES: readonly BoxPlacement[] = [
   {

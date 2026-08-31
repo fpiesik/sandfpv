@@ -13,10 +13,7 @@ export function applyRateCurve(
   expo: number,
 ): number {
   const input = Math.min(1, Math.max(-1, stick));
-  // Retain a meaningful linear component even at the maximum setting. A fully
-  // cubic curve makes ordinary stick movements almost imperceptible and feels
-  // like a large dead zone despite the input itself being calibrated correctly.
-  const amount = Math.min(0.7, Math.max(0, expo));
+  const amount = Math.min(1, Math.max(0, expo));
   const shaped = input * (1 - amount) + input * input * input * amount;
   return shaped * maxRateDegrees * (Math.PI / 180);
 }
