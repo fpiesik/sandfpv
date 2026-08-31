@@ -16,8 +16,47 @@
         aria-label="3D-Ansicht des FPV-Simulators"
       ></canvas>
       <aside class="hud">
-        <strong>SAND<span>FPV</span></strong>
-        <small>PHYSICS · 120 HZ · MOTOR <span id="motor-state">0%</span></small>
+        <header>
+          <strong>SAND<span>FPV</span></strong
+          ><b id="camera-mode">FPV</b>
+        </header>
+        <dl class="telemetry">
+          <dt>THR</dt>
+          <dd id="motor-state">0%</dd>
+          <dt>FPS</dt>
+          <dd id="fps">--</dd>
+          <dt>ROLL</dt>
+          <dd id="hud-roll">+0.00</dd>
+          <dt>PITCH</dt>
+          <dd id="hud-pitch">+0.00</dd>
+          <dt>YAW</dt>
+          <dd id="hud-yaw">+0.00</dd>
+        </dl>
+        <div class="camera-settings">
+          <label
+            >ANGLE <output id="camera-angle-value">20°</output
+            ><input id="camera-angle" type="range" min="0" max="60" value="20"
+          /></label>
+          <label
+            >FOV <output id="camera-fov-value">95°</output
+            ><input id="camera-fov" type="range" min="60" max="130" value="95"
+          /></label>
+          <label class="visualizer-option"
+            ><input id="show-sticks" type="checkbox" checked /> MODE 2
+            STICKS</label
+          >
+        </div>
+        <small>START / C: KAMERA · R: RESET</small>
+      </aside>
+      <aside
+        id="stick-visualizer"
+        class="stick-visualizer"
+        aria-label="Mode-2 Stick-Anzeige"
+      >
+        <div class="stick"><i id="left-stick"></i><span>YAW / THR</span></div>
+        <div class="stick">
+          <i id="right-stick"></i><span>ROLL / PITCH</span>
+        </div>
       </aside>
       <aside class="debug-panel" aria-label="Flight Controller Debug">
         <strong>FLIGHT CONTROLLER</strong>

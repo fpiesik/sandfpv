@@ -52,24 +52,63 @@ async function start(): Promise<void> {
     .querySelector("#open-tuning")
     ?.addEventListener("click", () => tuningPanel.open(tuning));
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
-  const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
-  document.querySelector("#reset")?.addEventListener("click", () => {
+  const fpsReadout = document.querySelector<HTMLElement>("#fps");
+  const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
+  const angleInput = document.querySelector<HTMLInputElement>("#camera-angle");
+  const fovInput = document.querySelector<HTMLInputElement>("#camera-fov");
+  const stickVisualizer =
+    document.querySelector<HTMLElement>("#stick-visualizer");
+  const showSticks = document.querySelector<HTMLInputElement>("#show-sticks");
+  const reset = (): void => {
     drone.reset();
     flightController.reset();
+  };
+  const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
+  document.querySelector("#reset")?.addEventListener("click", reset);
+  const updateCameraSettings = (): void => {
+    const angle = Number(angleInput?.value ?? 20);
+    const fov = Number(fovInput?.value ?? 95);
+    view.setFpvSettings(angle, fov);
+    document.querySelector("#camera-angle-value")!.textContent = `${angle}°`;
+    document.querySelector("#camera-fov-value")!.textContent = `${fov}°`;
+  };
+  angleInput?.addEventListener("input", updateCameraSettings);
+  fovInput?.addEventListener("input", updateCameraSettings);
+  updateCameraSettings();
+  showSticks?.addEventListener("change", () => {
+    stickVisualizer?.toggleAttribute("hidden", !showSticks.checked);
+  });
+  const toggleCamera = (): void => {
+    if (cameraMode)
+      cameraMode.textContent = view.toggleCamera() ? "FPV" : "DEBUG";
+  };
+  addEventListener("keydown", ({ code, repeat }) => {
+    if (repeat) return;
+    if (code === "KeyC") toggleCamera();
+    if (code === "KeyR") reset();
   });
   const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
+  let smoothedFps = 60;
+  let cameraButtonPressed = false;
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
 
   const frame = (time: number): void => {
     gamepadInput.update();
     const controls = gamepadInput.read();
+    const cameraButtonNow = gamepadManager.connectedGamepads.some(
+      (gamepad) => gamepad.buttons[9]?.pressed,
+    );
+    if (cameraButtonNow && !cameraButtonPressed) toggleCamera();
+    cameraButtonPressed = cameraButtonNow;
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
       drone.applyThrottle(controls.throttle, stepSeconds);
       flightController.update(controls, stepSeconds);
       world.timestep = stepSeconds;
       world.step();
     });
+    smoothedFps +=
+      (1000 / Math.max(1, time - previousTime) - smoothedFps) * 0.08;
     previousTime = time;
 
     const position = drone.body.translation();
@@ -78,6 +117,20 @@ async function start(): Promise<void> {
     view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
     if (motorReadout)
       motorReadout.textContent = `${Math.round(drone.currentMotorThrottle * 100)}%`;
+    if (fpsReadout) fpsReadout.textContent = smoothedFps.toFixed(0);
+    const signed = (value: number): string =>
+      `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
+    for (const [name, value] of Object.entries(controls)) {
+      if (name === "selfLevel" || name === "throttle") continue;
+      const readout = document.querySelector<HTMLElement>(`#hud-${name}`);
+      if (readout) readout.textContent = signed(value as number);
+    }
+    const moveStick = (selector: string, x: number, y: number): void => {
+      const stick = document.querySelector<HTMLElement>(selector);
+      if (stick) stick.style.transform = `translate(${x * 26}px, ${-y * 26}px)`;
+    };
+    moveStick("#left-stick", controls.yaw, controls.throttle * 2 - 1);
+    moveStick("#right-stick", controls.roll, controls.pitch);
     if (debugReadout) {
       const debug = flightController.getDebug();
       const row = (value: { x: number; y: number; z: number }): string =>

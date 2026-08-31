@@ -34,6 +34,20 @@ canvas {
   backdrop-filter: blur(8px);
   letter-spacing: 0.12em;
 }
+.hud header,
+.camera-settings label,
+.visualizer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.hud header b {
+  color: #75d89b;
+  font:
+    0.6rem ui-monospace,
+    monospace;
+}
 .hud strong {
   font-size: 1.1rem;
 }
@@ -43,6 +57,96 @@ canvas {
 .hud small {
   color: #aeb8ae;
   font-size: 0.65rem;
+}
+.telemetry {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 0.25rem 0.7rem;
+  margin: 0.55rem 0;
+  font:
+    0.62rem ui-monospace,
+    monospace;
+}
+.telemetry dt {
+  color: #8f9c91;
+}
+.telemetry dd {
+  margin: 0;
+  color: #ffb000;
+  text-align: right;
+}
+.camera-settings {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.55rem;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+}
+.camera-settings label:not(.visualizer-option) {
+  display: grid;
+  grid-template-columns: 3.5rem 2.2rem 6rem;
+}
+.camera-settings output {
+  color: #ffb000;
+}
+.camera-settings input[type="range"] {
+  width: 6rem;
+  accent-color: #ffb000;
+}
+.camera-settings input[type="checkbox"] {
+  accent-color: #ffb000;
+}
+
+.stick-visualizer {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.65rem;
+  background: rgb(10 14 11 / 70%);
+}
+.stick-visualizer[hidden] {
+  display: none;
+}
+.stick {
+  position: relative;
+  width: 4.3rem;
+  height: 4.3rem;
+  border: 1px solid rgb(255 255 255 / 25%);
+  background:
+    linear-gradient(
+      90deg,
+      transparent 49%,
+      rgb(255 255 255 / 12%) 50%,
+      transparent 51%
+    ),
+    linear-gradient(
+      transparent 49%,
+      rgb(255 255 255 / 12%) 50%,
+      transparent 51%
+    );
+}
+.stick i {
+  position: absolute;
+  top: calc(50% - 0.25rem);
+  left: calc(50% - 0.25rem);
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #ffb000;
+  box-shadow: 0 0 0.5rem #ffb000;
+}
+.stick span {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  width: 100%;
+  color: #8f9c91;
+  font:
+    0.45rem ui-monospace,
+    monospace;
+  text-align: center;
 }
 #loading {
   position: fixed;
