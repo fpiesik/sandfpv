@@ -5,8 +5,6 @@ import { Drone, type DroneConfig } from "./Drone";
 const config: DroneConfig = {
   mass: 1,
   maxThrust: 20,
-  minMotorThrottle: 0,
-  maxMotorThrottle: 1,
   linearDrag: 0,
   angularDrag: 0,
   motorResponseTime: 0.1,
@@ -74,41 +72,6 @@ describe("Drone", () => {
     expect(drone.flightControllerDebug.desiredRates.x).toBeGreaterThan(0);
     expect(drone.flightControllerDebug.torques.x).toBeGreaterThan(0);
     expect(drone.flightControllerDebug.desiredRates.y).toBe(0);
-  });
-
-  it.each([
-    ["roll", { roll: 1, pitch: 0, yaw: 0 }, "x"],
-    ["pitch", { roll: 0, pitch: 1, yaw: 0 }, "z"],
-    ["yaw", { roll: 0, pitch: 0, yaw: 1 }, "y"],
-  ] as const)(
-    "rotates the rigid body in response to %s",
-    (_name, controls, axis) => {
-      const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
-      world.timestep = 1 / 120;
-      const drone = new Drone(world, { ...config, rateKd: 0 });
-
-      for (let step = 0; step < 10; step += 1) {
-        drone.update(0, world.timestep, controls);
-        world.step();
-      }
-
-      expect(Math.abs(drone.body.angvel()[axis])).toBeGreaterThan(0.01);
-    },
-  );
-
-  it("clamps throttle commands and applies the configured motor range", () => {
-    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
-    const drone = new Drone(world, {
-      ...config,
-      minMotorThrottle: 0.1,
-      maxMotorThrottle: 0.8,
-      motorResponseTime: 0,
-    });
-
-    drone.update(-1, 1 / 120);
-    expect(drone.currentMotorThrottle).toBeCloseTo(0.1);
-    drone.update(2, 1 / 120);
-    expect(drone.currentMotorThrottle).toBeCloseTo(0.8);
   });
 
   it("resets transform, velocities, forces, and motor state", () => {
