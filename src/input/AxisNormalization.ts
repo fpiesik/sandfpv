@@ -7,11 +7,6 @@ export interface AxisCalibration {
   readonly deadband: number;
 }
 
-// A value close to 1 makes almost the entire stick travel unresponsive. Keep
-// this limit in the normalization path as well as the UI so legacy persisted
-// configurations cannot reintroduce that behaviour.
-export const MAX_INPUT_DEADBAND = 0.2;
-
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, value));
 
@@ -28,7 +23,7 @@ export function normalizeCenteredAxis(
   normalized = clamp(normalized, -1, 1);
   if (calibration.inverted) normalized = -normalized;
 
-  const deadband = clamp(calibration.deadband, 0, MAX_INPUT_DEADBAND);
+  const deadband = clamp(calibration.deadband, 0, 0.99);
   const magnitude = Math.abs(normalized);
   if (magnitude <= deadband) return 0;
   return Math.sign(normalized) * ((magnitude - deadband) / (1 - deadband));
@@ -44,7 +39,7 @@ export function normalizeThrottleAxis(
   normalized = clamp(normalized, 0, 1);
   if (calibration.inverted) normalized = 1 - normalized;
 
-  const deadband = clamp(calibration.deadband, 0, MAX_INPUT_DEADBAND);
+  const deadband = clamp(calibration.deadband, 0, 0.99);
   if (normalized <= deadband) return 0;
   return (normalized - deadband) / (1 - deadband);
 }
