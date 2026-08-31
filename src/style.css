@@ -116,83 +116,6 @@ canvas {
   font-size: 0.62rem;
 }
 
-.lesson-hud {
-  position: fixed;
-  top: 7rem;
-  right: 27.5rem;
-  width: 20rem;
-  padding: 1rem;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-left: 3px solid #75d89b;
-  background: rgb(10 14 11 / 84%);
-  font-family: ui-monospace, monospace;
-  backdrop-filter: blur(10px);
-}
-.lesson-hud > small,
-.lesson-hud__target span,
-.lesson-hud dt {
-  color: #89948b;
-  font-size: 0.55rem;
-  letter-spacing: 0.14em;
-}
-.lesson-hud h2 {
-  margin: 0.2rem 0 0.8rem;
-  font-size: 1rem;
-  letter-spacing: 0.08em;
-}
-.lesson-hud__target {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0.65rem 0;
-  border-block: 1px solid rgb(255 255 255 / 10%);
-}
-.lesson-hud__target strong {
-  color: #75d89b;
-}
-.lesson-hud p {
-  color: #c3ccc5;
-  font-size: 0.7rem;
-  line-height: 1.45;
-}
-.lesson-hud dl {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 0;
-}
-.lesson-hud dl div + div {
-  border-left: 1px solid rgb(255 255 255 / 10%);
-}
-.lesson-hud dt,
-.lesson-hud dd {
-  margin: 0;
-  text-align: center;
-}
-.lesson-hud dd {
-  margin-top: 0.25rem;
-  color: #fff;
-  font-size: 0.8rem;
-}
-.lesson-complete {
-  display: grid;
-  gap: 0.2rem;
-  margin-top: 0.9rem;
-  padding: 0.75rem;
-  color: #dfffe9;
-  background: rgb(52 139 85 / 35%);
-  text-align: center;
-}
-.lesson-complete[hidden] {
-  display: none;
-}
-.lesson-complete b {
-  color: #75d89b;
-  letter-spacing: 0.14em;
-}
-.lesson-complete span {
-  font-size: 0.65rem;
-}
-
 .camera-settings {
   position: fixed;
   top: 1.5rem;
@@ -660,11 +583,6 @@ canvas {
 }
 
 @media (max-width: 650px) {
-  .lesson-hud {
-    top: 13rem;
-    right: 0.75rem;
-    width: calc(100vw - 1.5rem);
-  }
   .hud {
     top: 0.75rem;
     left: 0.75rem;
