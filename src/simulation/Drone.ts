@@ -113,6 +113,9 @@ export class Drone {
     const targetThrottle = Math.min(1, Math.max(0, throttle));
     if (!Number.isFinite(stepSeconds) || stepSeconds <= 0) return;
 
+    // Rapier keeps user forces between simulation steps. Replace the previous
+    // motor force instead of accumulating thrust on every controller update.
+    this.body.resetForces(false);
     const response = 1 - Math.exp(-stepSeconds / this.config.motorResponseTime);
     this.motorThrottle += (targetThrottle - this.motorThrottle) * response;
 
