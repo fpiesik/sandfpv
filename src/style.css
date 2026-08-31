@@ -55,6 +55,158 @@ canvas {
   display: none;
 }
 
+.calibrate-button {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #ffb000;
+  color: #ffb000;
+  background: rgb(10 14 11 / 88%);
+  font:
+    0.65rem ui-monospace,
+    monospace;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.wizard-layer {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(4 7 5 / 75%);
+  backdrop-filter: blur(8px);
+}
+.wizard-layer[hidden] {
+  display: none;
+}
+.wizard {
+  width: min(38rem, 100%);
+  padding: 1.2rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: #111713;
+  box-shadow: 0 1.5rem 5rem #000;
+}
+.wizard header,
+.wizard footer,
+.wizard-reading,
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.wizard header {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.wizard h2 {
+  margin: 0.25rem 0 0.9rem;
+}
+.wizard small,
+.wizard dt {
+  color: #8f9c91;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+}
+.wizard button,
+.wizard input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #4b574e;
+  color: inherit;
+  background: #1a221c;
+}
+.wizard button {
+  cursor: pointer;
+}
+.wizard button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.wizard button.primary {
+  border-color: #ffb000;
+  color: #ffb000;
+}
+.wizard header button {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+}
+.wizard-progress {
+  padding: 0;
+  list-style: none;
+}
+.wizard-progress li {
+  flex: 1;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid #354038;
+  color: #6f7b72;
+  font-size: 0.65rem;
+  text-align: center;
+}
+.wizard-progress .active {
+  border-color: #ffb000;
+  color: #ffb000;
+}
+.wizard-progress .done {
+  border-color: #75d89b;
+  color: #75d89b;
+}
+.wizard-instruction,
+.wizard-success,
+.wizard__empty {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  background: #19211b;
+  line-height: 1.5;
+}
+.wizard-instruction p {
+  margin-bottom: 0;
+  color: #aeb8ae;
+}
+.wizard-reading {
+  margin: 1rem 0;
+}
+.wizard-reading div {
+  flex: 1;
+}
+.wizard-reading dd {
+  margin: 0.25rem 0 0;
+  font:
+    0.8rem ui-monospace,
+    monospace;
+}
+.wizard-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+.wizard-settings fieldset {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #354038;
+  font-size: 0.75rem;
+}
+.wizard-settings label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.wizard-settings input[type="number"] {
+  width: 5rem;
+}
+.wizard-settings input[type="checkbox"] {
+  accent-color: #ffb000;
+}
+.wizard footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
 .controller-panel {
   position: fixed;
   top: 1.5rem;
