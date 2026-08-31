@@ -3,7 +3,7 @@ import * as THREE from "three";
 export class Scene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
-  readonly drone = new THREE.Group();
+  readonly cube: THREE.Mesh;
   private readonly renderer: THREE.WebGLRenderer;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -33,28 +33,16 @@ export class Scene {
     ground.receiveShadow = true;
     this.scene.add(ground, new THREE.GridHelper(40, 40, 0x75826c, 0x536149));
 
-    const body = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.32, 0),
+    this.cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshStandardMaterial({
         color: 0xffa800,
         roughness: 0.45,
         metalness: 0.1,
       }),
     );
-    body.scale.set(1, 0.35, 1.25);
-    const armMaterial = new THREE.MeshStandardMaterial({ color: 0x202820 });
-    for (const rotation of [Math.PI / 4, -Math.PI / 4]) {
-      const arm = new THREE.Mesh(
-        new THREE.BoxGeometry(0.78, 0.035, 0.055),
-        armMaterial,
-      );
-      arm.rotation.y = rotation;
-      arm.castShadow = true;
-      this.drone.add(arm);
-    }
-    body.castShadow = true;
-    this.drone.add(body);
-    this.scene.add(this.drone);
+    this.cube.castShadow = true;
+    this.scene.add(this.cube);
     this.resize();
     addEventListener("resize", this.resize);
   }
