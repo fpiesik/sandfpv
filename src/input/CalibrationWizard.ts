@@ -105,10 +105,6 @@ export class CalibrationWizard {
     const action = (event.target as HTMLElement).closest<HTMLElement>(
       "[data-action]",
     )?.dataset.action;
-    // Inputs are handled by `onChange`. Re-rendering for every bubbled click
-    // would replace a checkbox before its change event can update the draft.
-    if (!action) return;
-
     if (action === "close") this.root.setAttribute("hidden", "");
     if (action === "back") this.step = Math.max(0, this.step - 1);
     if (action === "capture") this.capture = !this.capture;
