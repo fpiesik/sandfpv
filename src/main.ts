@@ -1,5 +1,6 @@
 import "./style.css";
 import { FixedTimestep } from "./core/FixedTimestep";
+import { GateCourse } from "./course/GateCourse";
 import { ControllerInspector } from "./input/ControllerInspector";
 import { CalibrationWizard } from "./input/CalibrationWizard";
 import { GamepadInput } from "./input/GamepadInput";
@@ -8,6 +9,7 @@ import { loadInputConfiguration } from "./input/InputConfiguration";
 import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { FlightController } from "./simulation/FlightController";
+import { GateCollisionTracker } from "./simulation/GateCollisionTracker";
 import {
   DroneTuningPanel,
   loadDroneTuning,
@@ -39,7 +41,20 @@ async function start(): Promise<void> {
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
   let tuning = loadDroneTuning();
-  const { world, drone } = await createPhysicsWorld(tuning);
+  const { world, drone, gateSensors } = await createPhysicsWorld(tuning);
+  const gateReadout = document.querySelector<HTMLElement>("#gate-state");
+  const lapReadout = document.querySelector<HTMLElement>("#lap-state");
+  const course = new GateCourse(gateSensors.length, (nextGate, laps) => {
+    view.setExpectedGate(nextGate);
+    if (gateReadout)
+      gateReadout.textContent = `${nextGate + 1} / ${gateSensors.length}`;
+    if (lapReadout) lapReadout.textContent = String(laps);
+  });
+  const gateCollisions = new GateCollisionTracker(
+    world,
+    drone.collider,
+    gateSensors,
+  );
   const flightController = new FlightController(drone);
   const tuningElement = document.querySelector<HTMLElement>("#tuning");
   if (!tuningElement) throw new Error("Drone tuning panel is missing");
@@ -62,6 +77,8 @@ async function start(): Promise<void> {
   const reset = (): void => {
     drone.reset();
     flightController.reset();
+    gateCollisions.reset();
+    course.reset();
   };
   const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
   document.querySelector("#reset")?.addEventListener("click", reset);
@@ -106,6 +123,7 @@ async function start(): Promise<void> {
       flightController.update(controls, stepSeconds);
       world.timestep = stepSeconds;
       world.step();
+      gateCollisions.update((gateIndex) => course.pass(gateIndex));
     });
     smoothedFps +=
       (1000 / Math.max(1, time - previousTime) - smoothedFps) * 0.08;
