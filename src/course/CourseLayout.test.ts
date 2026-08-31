@@ -5,6 +5,7 @@ describe("expanded course layout", () => {
   it("uses a hall with three times the original footprint dimensions", () => {
     expect(HALL_WIDTH).toBe(108);
     expect(HALL_DEPTH).toBe(72);
+    expect(HALL_HEIGHT).toBe(40);
   });
 
   it("keeps every redistributed gate inside the hall", () => {
