@@ -15,42 +15,9 @@
         id="simulator"
         aria-label="3D-Ansicht des FPV-Simulators"
       ></canvas>
-      <aside class="hud" aria-label="Flugstatus">
-        <div class="hud__brand">
-          <strong>SAND<span>FPV</span></strong
-          ><b id="camera-mode">FPV</b>
-        </div>
-        <div class="hud__readout">
-          <span>THR <b id="hud-throttle">0%</b></span
-          ><span>ROLL <b id="hud-roll">0.00</b></span
-          ><span>PITCH <b id="hud-pitch">0.00</b></span
-          ><span>YAW <b id="hud-yaw">0.00</b></span>
-        </div>
-        <small
-          ><span id="hud-fps">-- FPS</span> · R RESET · C KAMERA · V
-          STICKS</small
-        >
-      </aside>
-      <section class="camera-settings" aria-label="Kameraeinstellungen">
-        <label
-          >WINKEL <output id="camera-angle-value">25°</output
-          ><input id="camera-angle" type="range" min="0" max="60" value="25"
-        /></label>
-        <label
-          >FOV <output id="camera-fov-value">90°</output
-          ><input id="camera-fov" type="range" min="50" max="140" value="90"
-        /></label>
-        <button id="toggle-camera">ANSICHT · C</button>
-      </section>
-      <aside
-        id="stick-visualizer"
-        class="sticks"
-        aria-label="Mode-2 Stick Visualizer"
-      >
-        <div class="stick"><span>YAW / THR</span><i id="left-stick"></i></div>
-        <div class="stick">
-          <span>ROLL / PITCH</span><i id="right-stick"></i>
-        </div>
+      <aside class="hud">
+        <strong>SAND<span>FPV</span></strong>
+        <small>PHYSICS · 120 HZ</small>
       </aside>
       <aside
         id="flight-debug"
