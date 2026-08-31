@@ -1,6 +1,5 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Drone } from "./Drone";
-import { loadDroneConfiguration } from "./DroneConfiguration";
 
 export async function createPhysicsWorld(): Promise<{
   world: RAPIER.World;
@@ -12,6 +11,6 @@ export async function createPhysicsWorld(): Promise<{
     RAPIER.ColliderDesc.cuboid(20, 0.1, 20).setTranslation(0, -0.1, 0),
   );
 
-  const drone = new Drone(world, loadDroneConfiguration());
+  const drone = new Drone(world);
   return { world, drone };
 }
