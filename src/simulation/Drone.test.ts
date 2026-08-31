@@ -1,9 +1,25 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { beforeAll, describe, expect, it } from "vitest";
 import { Drone, type DroneConfig } from "./Drone";
-import { AIR65_II_RACING } from "./DronePresets";
 
-const config: DroneConfig = structuredClone(AIR65_II_RACING);
+const config: DroneConfig = {
+  mass: 1,
+  maxThrust: 20,
+  minMotorThrottle: 0,
+  maxMotorThrottle: 1,
+  linearDrag: 0,
+  angularDrag: 0,
+  motorResponseTime: 0.1,
+  maxRollRate: 600,
+  maxPitchRate: 600,
+  maxYawRate: 400,
+  rateExpo: 0.35,
+  rateKp: 0.12,
+  rateKi: 0,
+  rateKd: 0.003,
+  rateIntegralLimit: 2,
+  maxControlTorque: 2.5,
+};
 
 beforeAll(async () => RAPIER.init());
 
@@ -22,7 +38,7 @@ describe("Drone", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(
       world,
-      { ...config, motorTimeConstantUp: 0, motorTimeConstantDown: 0 },
+      { ...config, motorResponseTime: 0 },
       {
         position: { x: 0, y: 1, z: 0 },
         rotation: { x: 0, y: 0, z: Math.SQRT1_2, w: Math.SQRT1_2 },
@@ -38,11 +54,7 @@ describe("Drone", () => {
 
   it("replaces persistent forces on every physics tick", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
-    const drone = new Drone(world, {
-      ...config,
-      motorTimeConstantUp: 0,
-      motorTimeConstantDown: 0,
-    });
+    const drone = new Drone(world, { ...config, motorResponseTime: 0 });
 
     drone.update(1, 1 / 120);
     world.step();
@@ -55,10 +67,7 @@ describe("Drone", () => {
 
   it("creates body torque from an acro rate command", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
-    const drone = new Drone(world, {
-      ...config,
-      rollController: { ...config.rollController, kd: 0 },
-    });
+    const drone = new Drone(world, { ...config, rateKd: 0 });
 
     drone.update(0, 1 / 120, { roll: 1, pitch: 0, yaw: 0 });
 
@@ -95,12 +104,7 @@ describe("Drone", () => {
     (_name, controls, axis) => {
       const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
       world.timestep = 1 / 120;
-      const drone = new Drone(world, {
-        ...config,
-        rollController: { ...config.rollController, kd: 0 },
-        pitchController: { ...config.pitchController, kd: 0 },
-        yawController: { ...config.yawController, kd: 0 },
-      });
+      const drone = new Drone(world, { ...config, rateKd: 0 });
 
       for (let step = 0; step < 10; step += 1) {
         drone.update(0, world.timestep, controls);
@@ -117,8 +121,7 @@ describe("Drone", () => {
       ...config,
       minMotorThrottle: 0.1,
       maxMotorThrottle: 0.8,
-      motorTimeConstantUp: 0,
-      motorTimeConstantDown: 0,
+      motorResponseTime: 0,
     });
 
     drone.update(-1, 1 / 120);
