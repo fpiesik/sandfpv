@@ -61,7 +61,7 @@ const FIELDS: ReadonlyArray<{
   },
   {
     key: "maxRollRate",
-    label: "Max. Pitch-Rate",
+    label: "Max. Roll-Rate",
     min: 0,
     max: 2000,
     step: 10,
@@ -69,7 +69,7 @@ const FIELDS: ReadonlyArray<{
   },
   {
     key: "maxPitchRate",
-    label: "Max. Roll-Rate",
+    label: "Max. Pitch-Rate",
     min: 0,
     max: 2000,
     step: 10,

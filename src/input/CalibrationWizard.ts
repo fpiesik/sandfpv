@@ -10,8 +10,8 @@ import type { GamepadManager, GamepadSnapshot } from "./GamepadManager";
 const CONTROLS: readonly ControlName[] = ["throttle", "roll", "pitch", "yaw"];
 const LABELS: Record<ControlName, string> = {
   throttle: "Throttle",
-  roll: "Pitch",
-  pitch: "Roll",
+  roll: "Roll",
+  pitch: "Pitch",
   yaw: "Yaw",
 };
 
