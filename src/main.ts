@@ -7,6 +7,7 @@ import { GamepadManager } from "./input/GamepadManager";
 import { loadInputConfiguration } from "./input/InputConfiguration";
 import { Scene } from "./render/Scene";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
+import { FlightController } from "./simulation/FlightController";
 
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
@@ -33,10 +34,13 @@ async function start(): Promise<void> {
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
   const { world, drone } = await createPhysicsWorld();
+  const flightController = new FlightController(drone);
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
-  document
-    .querySelector("#reset")
-    ?.addEventListener("click", () => drone.reset());
+  const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
+  document.querySelector("#reset")?.addEventListener("click", () => {
+    drone.reset();
+    flightController.reset();
+  });
   const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
@@ -46,6 +50,7 @@ async function start(): Promise<void> {
     const controls = gamepadInput.read();
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
       drone.applyThrottle(controls.throttle, stepSeconds);
+      flightController.update(controls, stepSeconds);
       world.timestep = stepSeconds;
       world.step();
     });
@@ -57,6 +62,12 @@ async function start(): Promise<void> {
     view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
     if (motorReadout)
       motorReadout.textContent = `${Math.round(drone.currentMotorThrottle * 100)}%`;
+    if (debugReadout) {
+      const debug = flightController.getDebug();
+      const row = (value: { x: number; y: number; z: number }): string =>
+        `${value.z.toFixed(2)} / ${value.x.toFixed(2)} / ${value.y.toFixed(2)}`;
+      debugReadout.innerHTML = `<dt>MODE</dt><dd>${debug.mode}</dd><dt>DESIRED °/s</dt><dd>${row(debug.desiredRates).replace(/-?\d+\.\d+/g, (number) => ((Number(number) * 180) / Math.PI).toFixed(0))}</dd><dt>ACTUAL °/s</dt><dd>${row(debug.actualRates).replace(/-?\d+\.\d+/g, (number) => ((Number(number) * 180) / Math.PI).toFixed(0))}</dd><dt>TORQUE Nm</dt><dd>${row(debug.torque)}</dd>`;
+    }
     view.render();
     requestAnimationFrame(frame);
   };

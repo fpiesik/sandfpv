@@ -32,6 +32,7 @@ export class CalibrationWizard {
   private minimum = Infinity;
   private maximum = -Infinity;
   private renderedState?: string;
+  private selfLevelButton?: number;
   private readonly calibrated = new Map<ControlName, AxisCalibration>();
 
   constructor(
@@ -48,6 +49,7 @@ export class CalibrationWizard {
     this.gamepad = undefined;
     this.controlIndex = 0;
     this.calibrated.clear();
+    this.selfLevelButton = undefined;
     this.resetDetection();
     this.renderedState = undefined;
     this.root.removeAttribute("hidden");
@@ -65,7 +67,14 @@ export class CalibrationWizard {
     }
     if (this.root.hasAttribute("hidden")) return;
     if (this.gamepad && this.controlIndex < ORDER.length) this.capture();
-    else if (connectionChanged) this.render();
+    else if (this.gamepad) {
+      const button = this.gamepad.buttons.findIndex(({ pressed }) => pressed);
+      if (button >= 0 && button !== this.selfLevelButton) {
+        this.selfLevelButton = button;
+        this.renderedState = undefined;
+      }
+      this.render();
+    } else if (connectionChanged) this.render();
   }
 
   private capture(): void {
@@ -108,7 +117,7 @@ export class CalibrationWizard {
 
   private render(): void {
     const control = ORDER[this.controlIndex];
-    const renderedState = `${this.gamepad?.id ?? ""}:${this.controlIndex}:${this.detectedAxis ?? ""}`;
+    const renderedState = `${this.gamepad?.id ?? ""}:${this.controlIndex}:${this.detectedAxis ?? ""}:${this.selfLevelButton ?? ""}`;
     if (this.renderedState === renderedState) {
       this.updateReadings();
       return;
@@ -123,8 +132,8 @@ export class CalibrationWizard {
       <header><div><small>INPUT-KALIBRIERUNG</small><h2 id="wizard-title">${control ? `${LABELS[control]} zuordnen` : "Kalibrierung abgeschlossen"}</h2></div><button data-action="close" aria-label="Schließen">×</button></header>
       <ol class="wizard-progress">${progress}</ol>
       ${!this.gamepad ? '<p class="wizard__empty">Gamepad verbinden und eine Taste drücken.</p>' : control ? `<div class="wizard-instruction"><strong>${DIRECTIONS[control]}</strong><p>${axisFound ? `Achse ${this.detectedAxis} erkannt. Bewege sie über den gesamten Bereich.` : "Warte auf eine deutliche Achsenbewegung …"}</p></div><dl class="wizard-reading"><div><dt>Achse</dt><dd data-reading="axis">${this.detectedAxis ?? "—"}</dd></div><div><dt>Minimum</dt><dd data-reading="minimum">${this.format(this.minimum)}</dd></div><div><dt>Maximum</dt><dd data-reading="maximum">${this.format(this.maximum)}</dd></div><div><dt>Center</dt><dd data-reading="center">${this.format(this.baseline[this.detectedAxis ?? -1])}</dd></div></dl>` : '<p class="wizard-success">Alle vier Steuerachsen wurden erkannt. Du kannst Deadband und Invertierung prüfen und die Konfiguration speichern.</p>'}
-      ${!control ? this.settings() : ""}
-      <footer><button data-action="restart">Neu starten</button><button class="primary" data-action="next" ${this.gamepad && (axisFound || !control) ? "" : "disabled"}>${control ? "Achse übernehmen" : "Speichern"}</button></footer>
+      ${!control ? `<div class="wizard-instruction"><strong>Angle-/Self-Level-Schalter zuordnen</strong><p>${this.selfLevelButton === undefined ? "Betätige den gewünschten Controller-Switch …" : `Button ${this.selfLevelButton} erkannt.`}</p></div>${this.settings()}` : ""}
+      <footer><button data-action="restart">Neu starten</button><button class="primary" data-action="next" ${this.gamepad && (axisFound || (!control && this.selfLevelButton !== undefined)) ? "" : "disabled"}>${control ? "Achse übernehmen" : "Speichern"}</button></footer>
     </div>`;
   }
 
@@ -159,6 +168,7 @@ export class CalibrationWizard {
     if (action === "restart") {
       this.controlIndex = 0;
       this.calibrated.clear();
+      this.selfLevelButton = undefined;
       this.resetDetection();
     }
     if (action === "next") {
@@ -204,7 +214,12 @@ export class CalibrationWizard {
   };
 
   private save(): void {
-    if (!this.gamepad || this.calibrated.size !== ORDER.length) return;
+    if (
+      !this.gamepad ||
+      this.calibrated.size !== ORDER.length ||
+      this.selfLevelButton === undefined
+    )
+      return;
     const axes = Object.fromEntries(this.calibrated) as Record<
       ControlName,
       AxisCalibration
@@ -213,6 +228,7 @@ export class CalibrationWizard {
       version: INPUT_CONFIGURATION_VERSION,
       gamepadId: this.gamepad.id,
       axes,
+      selfLevelButton: this.selfLevelButton,
     };
     saveInputConfiguration(configuration);
     this.onSave(configuration);
