@@ -3,14 +3,14 @@ import * as THREE from "three";
 export class Scene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
-  readonly cube: THREE.Mesh;
+  readonly drone = new THREE.Group();
   private readonly renderer: THREE.WebGLRenderer;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene.background = new THREE.Color(0x9eb7bd);
     this.scene.fog = new THREE.Fog(0x9eb7bd, 25, 80);
-    this.camera.position.set(8, 6, 10);
-    this.camera.lookAt(0, 1.5, 0);
+    this.camera.position.set(0.3, 0.22, 0.38);
+    this.camera.lookAt(0, 0.08, 0);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -26,23 +26,39 @@ export class Scene {
     );
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(40, 40),
+      new THREE.PlaneGeometry(2, 2),
       new THREE.MeshStandardMaterial({ color: 0x465b3c, roughness: 0.9 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    this.scene.add(ground, new THREE.GridHelper(40, 40, 0x75826c, 0x536149));
+    this.scene.add(ground, new THREE.GridHelper(2, 40, 0x75826c, 0x536149));
 
-    this.cube = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
+    const frameMaterial = new THREE.MeshStandardMaterial({
+      color: 0x171c19,
+      roughness: 0.7,
+    });
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(0.028, 0.015, 0.036),
       new THREE.MeshStandardMaterial({
         color: 0xffa800,
         roughness: 0.45,
-        metalness: 0.1,
       }),
     );
-    this.cube.castShadow = true;
-    this.scene.add(this.cube);
+    canopy.position.y = 0.008;
+    this.drone.add(canopy);
+    for (const x of [-0.022, 0.022]) {
+      for (const z of [-0.022, 0.022]) {
+        const duct = new THREE.Mesh(
+          new THREE.TorusGeometry(0.014, 0.0025, 6, 16),
+          frameMaterial,
+        );
+        duct.rotation.x = Math.PI / 2;
+        duct.position.set(x, 0, z);
+        this.drone.add(duct);
+      }
+    }
+    this.drone.traverse((object) => (object.castShadow = true));
+    this.scene.add(this.drone);
     this.resize();
     addEventListener("resize", this.resize);
   }
