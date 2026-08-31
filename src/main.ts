@@ -32,24 +32,31 @@ async function start(): Promise<void> {
   document
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
-  const { world, cube } = await createPhysicsWorld();
+  const { world, drone } = await createPhysicsWorld();
+  const motorReadout = document.querySelector<HTMLElement>("#motor-state");
+  document
+    .querySelector("#reset")
+    ?.addEventListener("click", () => drone.reset());
   const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
 
   const frame = (time: number): void => {
     gamepadInput.update();
-    gamepadInput.read();
+    const controls = gamepadInput.read();
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
+      drone.applyThrottle(controls.throttle, stepSeconds);
       world.timestep = stepSeconds;
       world.step();
     });
     previousTime = time;
 
-    const position = cube.body.translation();
-    const rotation = cube.body.rotation();
-    view.cube.position.set(position.x, position.y, position.z);
-    view.cube.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    const position = drone.body.translation();
+    const rotation = drone.body.rotation();
+    view.drone.position.set(position.x, position.y, position.z);
+    view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    if (motorReadout)
+      motorReadout.textContent = `${Math.round(drone.currentMotorThrottle * 100)}%`;
     view.render();
     requestAnimationFrame(frame);
   };
