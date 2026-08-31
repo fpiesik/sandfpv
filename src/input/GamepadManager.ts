@@ -1,5 +1,3 @@
-import { INPUT_CHANNEL_COUNT } from "./InputSource";
-
 export interface GamepadSnapshot {
   readonly id: string;
   readonly index: number;
@@ -71,8 +69,7 @@ export class GamepadManager {
       id: gamepad.id,
       index: gamepad.index,
       mapping: gamepad.mapping,
-      // WebHID controllers may expose more than the eight traditional channels.
-      axes: Array.from(gamepad.axes).slice(0, INPUT_CHANNEL_COUNT),
+      axes: Array.from(gamepad.axes),
       buttons: gamepad.buttons.map(({ pressed, touched, value }) => ({
         pressed,
         touched,
