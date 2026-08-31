@@ -31,6 +31,7 @@ export class CalibrationWizard {
   private firstDirection = 0;
   private minimum = Infinity;
   private maximum = -Infinity;
+  private renderedState?: string;
   private readonly calibrated = new Map<ControlName, AxisCalibration>();
 
   constructor(
@@ -48,6 +49,7 @@ export class CalibrationWizard {
     this.controlIndex = 0;
     this.calibrated.clear();
     this.resetDetection();
+    this.renderedState = undefined;
     this.root.removeAttribute("hidden");
     this.render();
   }
@@ -106,6 +108,12 @@ export class CalibrationWizard {
 
   private render(): void {
     const control = ORDER[this.controlIndex];
+    const renderedState = `${this.gamepad?.id ?? ""}:${this.controlIndex}:${this.detectedAxis ?? ""}`;
+    if (this.renderedState === renderedState) {
+      this.updateReadings();
+      return;
+    }
+    this.renderedState = renderedState;
     const progress = ORDER.map(
       (name, index) =>
         `<li class="${index < this.controlIndex ? "done" : index === this.controlIndex ? "active" : ""}">${LABELS[name]}</li>`,
@@ -114,10 +122,26 @@ export class CalibrationWizard {
     this.root.innerHTML = `<div class="wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
       <header><div><small>INPUT-KALIBRIERUNG</small><h2 id="wizard-title">${control ? `${LABELS[control]} zuordnen` : "Kalibrierung abgeschlossen"}</h2></div><button data-action="close" aria-label="Schließen">×</button></header>
       <ol class="wizard-progress">${progress}</ol>
-      ${!this.gamepad ? '<p class="wizard__empty">Gamepad verbinden und eine Taste drücken.</p>' : control ? `<div class="wizard-instruction"><strong>${DIRECTIONS[control]}</strong><p>${axisFound ? `Achse ${this.detectedAxis} erkannt. Bewege sie über den gesamten Bereich.` : "Warte auf eine deutliche Achsenbewegung …"}</p></div><dl class="wizard-reading"><div><dt>Achse</dt><dd>${this.detectedAxis ?? "—"}</dd></div><div><dt>Minimum</dt><dd>${this.format(this.minimum)}</dd></div><div><dt>Maximum</dt><dd>${this.format(this.maximum)}</dd></div><div><dt>Center</dt><dd>${this.format(this.baseline[this.detectedAxis ?? -1])}</dd></div></dl>` : '<p class="wizard-success">Alle vier Steuerachsen wurden erkannt. Du kannst Deadband und Invertierung prüfen und die Konfiguration speichern.</p>'}
+      ${!this.gamepad ? '<p class="wizard__empty">Gamepad verbinden und eine Taste drücken.</p>' : control ? `<div class="wizard-instruction"><strong>${DIRECTIONS[control]}</strong><p>${axisFound ? `Achse ${this.detectedAxis} erkannt. Bewege sie über den gesamten Bereich.` : "Warte auf eine deutliche Achsenbewegung …"}</p></div><dl class="wizard-reading"><div><dt>Achse</dt><dd data-reading="axis">${this.detectedAxis ?? "—"}</dd></div><div><dt>Minimum</dt><dd data-reading="minimum">${this.format(this.minimum)}</dd></div><div><dt>Maximum</dt><dd data-reading="maximum">${this.format(this.maximum)}</dd></div><div><dt>Center</dt><dd data-reading="center">${this.format(this.baseline[this.detectedAxis ?? -1])}</dd></div></dl>` : '<p class="wizard-success">Alle vier Steuerachsen wurden erkannt. Du kannst Deadband und Invertierung prüfen und die Konfiguration speichern.</p>'}
       ${!control ? this.settings() : ""}
       <footer><button data-action="restart">Neu starten</button><button class="primary" data-action="next" ${this.gamepad && (axisFound || !control) ? "" : "disabled"}>${control ? "Achse übernehmen" : "Speichern"}</button></footer>
     </div>`;
+  }
+
+  /** Keep live values current without replacing a button during its click. */
+  private updateReadings(): void {
+    const values = {
+      axis: this.detectedAxis?.toString() ?? "—",
+      minimum: this.format(this.minimum),
+      maximum: this.format(this.maximum),
+      center: this.format(this.baseline[this.detectedAxis ?? -1]),
+    };
+    for (const [name, value] of Object.entries(values)) {
+      const reading = this.root.querySelector<HTMLElement>(
+        `[data-reading="${name}"]`,
+      );
+      if (reading) reading.textContent = value;
+    }
   }
 
   private settings(): string {
