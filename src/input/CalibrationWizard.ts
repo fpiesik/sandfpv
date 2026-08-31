@@ -94,7 +94,7 @@ export class CalibrationWizard {
   }
 
   private settingsStep(): string {
-    return `<p>Bringe alle Sticks an ihren Nullpunkt und übernimm die aktuelle Position. Throttle wirkt nur oberhalb dieses Punkts und wird auf 0 bis 100 % abgebildet.</p>
+    return `<p>Lasse die Sticks los und übernimm die aktuelle Mitte. Throttle verwendet nur Minimum und Maximum.</p>
       <button data-action="center">Aktuelle Position als Mitte</button><div class="wizard-values">${CONTROLS.map(
         (name) =>
           `<div><strong>${LABELS[name]}</strong><span>CENTER ${this.draft[name].center.toFixed(3)}</span><label>Deadband <input data-deadband="${name}" type="number" min="0" max="${MAX_INPUT_DEADBAND}" step="0.01" value="${this.draft[name].deadband}"></label><label><input data-invert="${name}" type="checkbox" ${this.draft[name].inverted ? "checked" : ""}> Invertieren</label></div>`,

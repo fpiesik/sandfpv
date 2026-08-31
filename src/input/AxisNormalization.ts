@@ -34,19 +34,15 @@ export function normalizeCenteredAxis(
   return Math.sign(normalized) * ((magnitude - deadband) / (1 - deadband));
 }
 
-/** Normalizes the positive half of a centered throttle axis to 0..1. */
+/** Normalizes an unipolar throttle to 0..1; center is intentionally irrelevant. */
 export function normalizeThrottleAxis(
   value: number,
   calibration: AxisCalibration,
 ): number {
-  const end = calibration.inverted ? calibration.minimum : calibration.maximum;
-  const span = Math.abs(end - calibration.center);
-  const direction = calibration.inverted ? -1 : 1;
-  const normalized = clamp(
-    span > 0 ? ((value - calibration.center) * direction) / span : 0,
-    0,
-    1,
-  );
+  const span = calibration.maximum - calibration.minimum;
+  let normalized = span > 0 ? (value - calibration.minimum) / span : 0;
+  normalized = clamp(normalized, 0, 1);
+  if (calibration.inverted) normalized = 1 - normalized;
 
   const deadband = clamp(calibration.deadband, 0, MAX_INPUT_DEADBAND);
   if (normalized <= deadband) return 0;
