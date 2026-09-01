@@ -22,6 +22,38 @@ canvas {
   height: 100%;
 }
 
+.crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  box-shadow: 0 0 2px rgb(0 0 0 / 85%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.crosshair::before,
+.crosshair::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.75rem;
+  height: 1px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 0 2px rgb(0 0 0 / 85%);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+.crosshair::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.crosshair[hidden] {
+  display: none;
+}
+
 .flight-panels {
   position: fixed;
   top: 1.5rem;

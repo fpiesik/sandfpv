@@ -75,10 +75,10 @@ export const obstacles: readonly BoxDefinition[] = [
  * of its opening; the outermost frame retains safe wall clearance.
  */
 export const gates: readonly GateDefinition[] = [
-  { position: [0, 1.2, -17], yaw: -Math.PI / 6, scale: 1, color: 0xffb000 },
-  { position: [8, 1, -9], yaw: Math.PI / 4, scale: 0.9, color: 0xff5f57 },
+  { position: [0, 1.2, -17], yaw: -Math.PI / 6, scale: 4, color: 0xffb000 },
+  { position: [8, 1, -9], yaw: Math.PI / 4, scale: 3, color: 0xff5f57 },
   { position: [8.5, 0.8, 7], yaw: 0, scale: 0.8, color: 0x4dd6a7 },
-  { position: [0, 1.1, 17], yaw: -Math.PI / 4, scale: 0.75, color: 0x67a8ff },
+  { position: [0, 1.1, 17], yaw: -Math.PI / 4, scale: 2, color: 0x67a8ff },
   { position: [-8.5, 0.65, 5], yaw: Math.PI / 4, scale: 0.7, color: 0xcb72ff },
 ];
 
