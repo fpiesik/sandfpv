@@ -13,6 +13,7 @@ import {
 
 export class GamepadInput implements InputSource {
   readonly id = "gamepad";
+  private deadband = 0;
 
   constructor(
     private readonly manager: GamepadManager,
@@ -21,6 +22,10 @@ export class GamepadInput implements InputSource {
 
   setConfiguration(configuration: InputConfiguration): void {
     this.configuration = configuration;
+  }
+
+  setDeadband(deadband: number): void {
+    this.deadband = Math.min(0.25, Math.max(0, deadband));
   }
 
   update(): void {
@@ -38,11 +43,26 @@ export class GamepadInput implements InputSource {
       gamepad.axes[calibration[name].axis] ?? calibration[name].center;
     return {
       throttle: normalizeThrottleAxis(raw("throttle"), calibration.throttle),
-      roll: normalizeCenteredAxis(raw("roll"), calibration.roll),
-      pitch: normalizeCenteredAxis(raw("pitch"), calibration.pitch),
-      yaw: normalizeCenteredAxis(raw("yaw"), calibration.yaw),
+      roll: applyDeadband(
+        normalizeCenteredAxis(raw("roll"), calibration.roll),
+        this.deadband,
+      ),
+      pitch: applyDeadband(
+        normalizeCenteredAxis(raw("pitch"), calibration.pitch),
+        this.deadband,
+      ),
+      yaw: applyDeadband(
+        normalizeCenteredAxis(raw("yaw"), calibration.yaw),
+        this.deadband,
+      ),
       selfLevel:
         gamepad.buttons[this.configuration.selfLevelButton]?.pressed ?? false,
     };
   }
+}
+
+export function applyDeadband(value: number, deadband: number): number {
+  const magnitude = Math.abs(value);
+  if (magnitude <= deadband) return 0;
+  return (Math.sign(value) * (magnitude - deadband)) / (1 - deadband);
 }

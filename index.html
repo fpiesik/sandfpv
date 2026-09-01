@@ -17,7 +17,26 @@
       ></canvas>
       <div id="crosshair" class="crosshair" aria-hidden="true"></div>
       <div class="flight-panels">
+        <nav class="mode-selector" aria-label="Flugmodus">
+          <button data-mode="free-flight">FREE FLIGHT</button>
+          <button data-mode="first-gates">FIRST GATES</button>
+          <button data-mode="race">RACE</button>
+        </nav>
         <aside id="lesson" class="lesson-panel" aria-live="polite"></aside>
+        <aside id="race-panel" class="race-panel" aria-live="polite" hidden>
+          <header><small>FÜNF-GATE-KURS</small><strong>RACE</strong></header>
+          <div class="race-time" id="race-time">00:00.000</div>
+          <dl>
+            <div>
+              <dt>BESTZEIT</dt>
+              <dd id="best-time">–</dd>
+            </div>
+            <div>
+              <dt>RUNDEN</dt>
+              <dd id="race-laps">0</dd>
+            </div>
+          </dl>
+        </aside>
         <aside class="hud">
           <header>
             <strong>SAND<span>FPV</span></strong
@@ -39,30 +58,6 @@
             <dt>YAW</dt>
             <dd id="hud-yaw">+0.00</dd>
           </dl>
-          <div class="camera-settings">
-            <label
-              >ANGLE <output id="camera-angle-value">20°</output
-              ><input
-                id="camera-angle"
-                type="range"
-                min="0"
-                max="60"
-                value="20"
-            /></label>
-            <label
-              >FOV <output id="camera-fov-value">95°</output
-              ><input
-                id="camera-fov"
-                type="range"
-                min="60"
-                max="130"
-                value="95"
-            /></label>
-            <label class="visualizer-option"
-              ><input id="show-sticks" type="checkbox" checked /> MODE 2
-              STICKS</label
-            >
-          </div>
           <small>START / C: KAMERA · R: RESET</small>
         </aside>
         <aside class="debug-panel" aria-label="Flight Controller Debug">
@@ -83,6 +78,7 @@
       </aside>
       <button id="reset" class="reset-button">DROHNE RESETTEN</button>
       <button id="open-tuning" class="tuning-button">DROHNE TUNEN</button>
+      <button id="open-settings" class="settings-button">EINSTELLUNGEN</button>
       <button id="calibrate" class="calibrate-button">INPUT KALIBRIEREN</button>
       <aside class="controller-panel" aria-label="Controller Inspector">
         <div class="controller-panel__title">
@@ -96,6 +92,7 @@
       </aside>
       <div id="calibration" class="wizard-layer" hidden></div>
       <div id="tuning" class="wizard-layer" hidden></div>
+      <div id="settings" class="wizard-layer" hidden></div>
       <div id="loading" role="status">Simulator wird initialisiert …</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
