@@ -16,12 +16,14 @@ describe("TrainingHall", () => {
     expect(hallSurfaces[1].position[1]).toBeCloseTo(9.1);
   });
 
-  it("defines whoop-sized gates with wall clearance", () => {
-    expect(gates.map((gate) => gate.scale)).toEqual([4, 3, 0.8, 2, 0.7]);
+  it("defines equally sized gates floating above the ground", () => {
+    expect(gates.map((gate) => gate.position[1])).toEqual([
+      2.5, 2.5, 2.5, 2.5, 2.5,
+    ]);
 
     for (const gate of gates) {
       const outerHalfWidth =
-        (GATE_OPENING.width / 2 + GATE_BAR_THICKNESS / 2) * gate.scale;
+        (GATE_OPENING.width / 2 + GATE_BAR_THICKNESS / 2) * 3;
       expect(Math.abs(gate.position[0]) + outerHalfWidth).toBeLessThanOrEqual(
         HALL_WIDTH / 2 - 1,
       );

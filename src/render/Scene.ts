@@ -100,6 +100,10 @@ export class Scene {
     this.hall.clearExpectedGate();
   }
 
+  setGateSize(scale: number): void {
+    this.hall.setGateSize(scale);
+  }
+
   private readonly resize = (): void => {
     const { clientWidth: width, clientHeight: height } =
       this.renderer.domElement;

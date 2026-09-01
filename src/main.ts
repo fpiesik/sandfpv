@@ -58,7 +58,8 @@ async function start(): Promise<void> {
     .querySelector("#calibrate")
     ?.addEventListener("click", () => wizard.open());
   let tuning = loadDroneTuning();
-  const { world, drone, gateSensors } = await createPhysicsWorld(tuning);
+  const { world, drone, gateSensors, setGateSize } =
+    await createPhysicsWorld(tuning);
   const gateReadout = document.querySelector<HTMLElement>("#gate-state");
   const lapReadout = document.querySelector<HTMLElement>("#lap-state");
   const lessonElement = document.querySelector<HTMLElement>("#lesson");
@@ -92,17 +93,9 @@ async function start(): Promise<void> {
   const applySettings = (next: AppSettings): void => {
     settings = next;
     gamepadInput.setDeadband(next.deadband);
-    tuning = {
-      ...tuning,
-      rateExpo: next.expo,
-      maxRates: {
-        roll: next.rollRate,
-        pitch: next.pitchRate,
-        yaw: next.yawRate,
-      },
-    };
-    drone.applyConfig(tuning);
     view.setFpvSettings(next.cameraAngle, next.fov);
+    view.setGateSize(next.gateSize);
+    setGateSize(next.gateSize);
     stickVisualizer?.toggleAttribute("hidden", !next.showStickVisualizer);
     saveAppSettings(next);
   };
