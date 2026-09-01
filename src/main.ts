@@ -69,6 +69,7 @@ async function start(): Promise<void> {
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
+  const crosshair = document.querySelector<HTMLElement>("#crosshair");
   const angleInput = document.querySelector<HTMLInputElement>("#camera-angle");
   const fovInput = document.querySelector<HTMLInputElement>("#camera-fov");
   const stickVisualizer =
@@ -96,8 +97,9 @@ async function start(): Promise<void> {
     stickVisualizer?.toggleAttribute("hidden", !showSticks.checked);
   });
   const toggleCamera = (): void => {
-    if (cameraMode)
-      cameraMode.textContent = view.toggleCamera() ? "FPV" : "DEBUG";
+    const fpvActive = view.toggleCamera();
+    if (cameraMode) cameraMode.textContent = fpvActive ? "FPV" : "DEBUG";
+    crosshair?.toggleAttribute("hidden", !fpvActive);
   };
   addEventListener("keydown", ({ code, repeat }) => {
     if (repeat) return;

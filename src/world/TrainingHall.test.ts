@@ -17,7 +17,7 @@ describe("TrainingHall", () => {
   });
 
   it("defines whoop-sized gates with wall clearance", () => {
-    expect(gates.map((gate) => gate.scale)).toEqual([1, 0.9, 0.8, 0.75, 0.7]);
+    expect(gates.map((gate) => gate.scale)).toEqual([4, 3, 0.8, 2, 0.7]);
 
     for (const gate of gates) {
       const outerHalfWidth =
