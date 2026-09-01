@@ -96,6 +96,10 @@ export class Scene {
     this.hall.setExpectedGate(index);
   }
 
+  clearExpectedGate(): void {
+    this.hall.clearExpectedGate();
+  }
+
   private readonly resize = (): void => {
     const { clientWidth: width, clientHeight: height } =
       this.renderer.domElement;

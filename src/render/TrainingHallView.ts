@@ -124,6 +124,10 @@ export class TrainingHallView {
     );
   }
 
+  clearExpectedGate(): void {
+    this.triggerMaterials.forEach((material) => (material.visible = false));
+  }
+
   private createBox(definition: BoxDefinition): THREE.Mesh {
     const mesh = new THREE.Mesh(
       new THREE.BoxGeometry(...definition.size),

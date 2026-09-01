@@ -1,13 +1,19 @@
 import "./style.css";
 import { FixedTimestep } from "./core/FixedTimestep";
-import { GateCourse } from "./course/GateCourse";
 import { ControllerInspector } from "./input/ControllerInspector";
 import { CalibrationWizard } from "./input/CalibrationWizard";
 import { GamepadInput } from "./input/GamepadInput";
 import { GamepadManager } from "./input/GamepadManager";
 import { loadInputConfiguration } from "./input/InputConfiguration";
 import { Scene } from "./render/Scene";
+import {
+  FIRST_GATES,
+  createFirstGatesLesson,
+  type GateLessonEvent,
+} from "./lesson/FirstGatesLesson";
+import { LessonPanel } from "./lesson/LessonPanel";
 import { createPhysicsWorld } from "./simulation/PhysicsWorld";
+import { CrashTracker } from "./simulation/CrashTracker";
 import { FlightController } from "./simulation/FlightController";
 import { GateCollisionTracker } from "./simulation/GateCollisionTracker";
 import {
@@ -44,17 +50,19 @@ async function start(): Promise<void> {
   const { world, drone, gateSensors } = await createPhysicsWorld(tuning);
   const gateReadout = document.querySelector<HTMLElement>("#gate-state");
   const lapReadout = document.querySelector<HTMLElement>("#lap-state");
-  const course = new GateCourse(gateSensors.length, (nextGate, laps) => {
-    view.setExpectedGate(nextGate);
-    if (gateReadout)
-      gateReadout.textContent = `${nextGate + 1} / ${gateSensors.length}`;
-    if (lapReadout) lapReadout.textContent = String(laps);
-  });
+  const lessonElement = document.querySelector<HTMLElement>("#lesson");
+  if (!lessonElement) throw new Error("Lesson panel is missing");
+  const lesson = createFirstGatesLesson();
+  const lessonPanel = new LessonPanel<GateLessonEvent>(lessonElement);
+  lesson.start();
+  lessonPanel.render(lesson.state);
+  view.setExpectedGate(FIRST_GATES[0]);
   const gateCollisions = new GateCollisionTracker(
     world,
     drone.collider,
     gateSensors,
   );
+  const crashTracker = new CrashTracker(world, drone.collider);
   const flightController = new FlightController(drone);
   const tuningElement = document.querySelector<HTMLElement>("#tuning");
   if (!tuningElement) throw new Error("Drone tuning panel is missing");
@@ -76,10 +84,12 @@ async function start(): Promise<void> {
     document.querySelector<HTMLElement>("#stick-visualizer");
   const showSticks = document.querySelector<HTMLInputElement>("#show-sticks");
   const reset = (): void => {
+    lesson.recordCrash();
     drone.reset();
     flightController.reset();
     gateCollisions.reset();
-    course.reset();
+    crashTracker.reset();
+    lessonPanel.render(lesson.state);
   };
   const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
   document.querySelector("#reset")?.addEventListener("click", reset);
@@ -124,9 +134,24 @@ async function start(): Promise<void> {
       drone.applyThrottle(controls.throttle, stepSeconds);
       flightController.update(controls, stepSeconds);
       world.timestep = stepSeconds;
+      const velocity = drone.body.linvel();
+      const impactSpeed = Math.hypot(velocity.x, velocity.y, velocity.z);
       world.step();
-      gateCollisions.update((gateIndex) => course.pass(gateIndex));
+      crashTracker.update(impactSpeed, () => lesson.recordCrash());
+      gateCollisions.update((gateIndex) => {
+        lesson.update(0, [{ type: "gate-passed", gateIndex }]);
+        const state = lesson.state;
+        if (state.status === "completed") view.clearExpectedGate();
+        else view.setExpectedGate(FIRST_GATES[state.stepIndex]);
+      });
     });
+    lesson.update((time - previousTime) / 1000);
+    const lessonState = lesson.state;
+    lessonPanel.render(lessonState);
+    if (gateReadout)
+      gateReadout.textContent = `${Math.min(lessonState.stepIndex + 1, 3)} / 3`;
+    if (lapReadout)
+      lapReadout.textContent = lessonState.status === "completed" ? "✓" : "–";
     smoothedFps +=
       (1000 / Math.max(1, time - previousTime) - smoothedFps) * 0.08;
     previousTime = time;

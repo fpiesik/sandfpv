@@ -72,6 +72,75 @@ canvas {
   backdrop-filter: blur(8px);
   letter-spacing: 0.12em;
 }
+.lesson-panel {
+  width: 20rem;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid #67a8ff;
+  background: rgb(10 14 11 / 86%);
+  backdrop-filter: blur(8px);
+}
+.lesson-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.lesson-panel header small,
+.lesson-target small,
+.lesson-panel dt {
+  color: #8f9c91;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+.lesson-target {
+  margin: 0.7rem 0;
+  padding: 0.65rem;
+  background: rgb(103 168 255 / 10%);
+}
+.lesson-target b,
+.lesson-target small {
+  display: block;
+}
+.lesson-target b {
+  margin-top: 0.2rem;
+  color: #67a8ff;
+}
+.lesson-target p {
+  margin: 0.45rem 0 0;
+  color: #c5cec6;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+.lesson-panel dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+}
+.lesson-panel dd {
+  margin: 0.2rem 0 0;
+  color: #ffb000;
+  font:
+    0.75rem ui-monospace,
+    monospace;
+}
+.lesson-success {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.7rem 0;
+  padding: 0.75rem;
+  border: 1px solid #75d89b;
+  background: rgb(117 216 155 / 12%);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.lesson-success b {
+  color: #75d89b;
+}
+.lesson-panel--complete {
+  border-color: #75d89b;
+}
 .hud header,
 .camera-settings label,
 .visualizer-option {
