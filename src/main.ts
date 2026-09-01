@@ -16,6 +16,15 @@ import { createPhysicsWorld } from "./simulation/PhysicsWorld";
 import { CrashTracker } from "./simulation/CrashTracker";
 import { FlightController } from "./simulation/FlightController";
 import { GateCollisionTracker } from "./simulation/GateCollisionTracker";
+import { GateCourse } from "./course/GateCourse";
+import { LapTimer } from "./course/LapTimer";
+import {
+  loadAppSettings,
+  saveAppSettings,
+  type AppSettings,
+  type FlightMode,
+} from "./settings/AppSettings";
+import { SettingsPanel } from "./settings/SettingsPanel";
 import {
   DroneTuningPanel,
   loadDroneTuning,
@@ -34,6 +43,8 @@ async function start(): Promise<void> {
     gamepadManager,
     loadInputConfiguration(),
   );
+  let settings = loadAppSettings();
+  gamepadInput.setDeadband(settings.deadband);
   const controllerInspector = new ControllerInspector(inspectorElement);
   gamepadManager.subscribe((gamepads) => controllerInspector.render(gamepads));
   const wizardElement = document.querySelector<HTMLElement>("#calibration");
@@ -56,7 +67,10 @@ async function start(): Promise<void> {
   const lessonPanel = new LessonPanel<GateLessonEvent>(lessonElement);
   lesson.start();
   lessonPanel.render(lesson.state);
-  view.setExpectedGate(FIRST_GATES[0]);
+  const lapTimer = new LapTimer();
+  const raceCourse = new GateCourse(5, (nextGate) =>
+    view.setExpectedGate(nextGate),
+  );
   const gateCollisions = new GateCollisionTracker(
     world,
     drone.collider,
@@ -71,6 +85,32 @@ async function start(): Promise<void> {
     drone.applyConfig(next);
     saveDroneTuning(next);
   });
+  const settingsElement = document.querySelector<HTMLElement>("#settings");
+  if (!settingsElement) throw new Error("Settings panel is missing");
+  const stickVisualizer =
+    document.querySelector<HTMLElement>("#stick-visualizer");
+  const applySettings = (next: AppSettings): void => {
+    settings = next;
+    gamepadInput.setDeadband(next.deadband);
+    tuning = {
+      ...tuning,
+      rateExpo: next.expo,
+      maxRates: {
+        roll: next.rollRate,
+        pitch: next.pitchRate,
+        yaw: next.yawRate,
+      },
+    };
+    drone.applyConfig(tuning);
+    view.setFpvSettings(next.cameraAngle, next.fov);
+    stickVisualizer?.toggleAttribute("hidden", !next.showStickVisualizer);
+    saveAppSettings(next);
+  };
+  const settingsPanel = new SettingsPanel(settingsElement, applySettings);
+  document
+    .querySelector("#open-settings")
+    ?.addEventListener("click", () => settingsPanel.open(settings));
+  applySettings(settings);
   document
     .querySelector("#open-tuning")
     ?.addEventListener("click", () => tuningPanel.open(tuning));
@@ -78,34 +118,50 @@ async function start(): Promise<void> {
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
   const crosshair = document.querySelector<HTMLElement>("#crosshair");
-  const angleInput = document.querySelector<HTMLInputElement>("#camera-angle");
-  const fovInput = document.querySelector<HTMLInputElement>("#camera-fov");
-  const stickVisualizer =
-    document.querySelector<HTMLElement>("#stick-visualizer");
-  const showSticks = document.querySelector<HTMLInputElement>("#show-sticks");
+  const lessonContainer = document.querySelector<HTMLElement>("#lesson")!;
+  const racePanel = document.querySelector<HTMLElement>("#race-panel")!;
+  let mode: FlightMode = settings.mode;
+  const setMode = (nextMode: FlightMode): void => {
+    mode = nextMode;
+    settings = { ...settings, mode };
+    saveAppSettings(settings);
+    lesson.reset();
+    lesson.start();
+    raceCourse.reset();
+    lapTimer.reset();
+    lessonContainer.hidden = mode !== "first-gates";
+    racePanel.hidden = mode !== "race";
+    document
+      .querySelectorAll<HTMLElement>("[data-mode]")
+      .forEach((button) =>
+        button.classList.toggle("active", button.dataset.mode === mode),
+      );
+    if (mode === "first-gates") view.setExpectedGate(FIRST_GATES[0]);
+    else if (mode === "race") view.setExpectedGate(0);
+    else view.clearExpectedGate();
+  };
+  document
+    .querySelectorAll<HTMLElement>("[data-mode]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        setMode(button.dataset.mode as FlightMode),
+      ),
+    );
   const reset = (): void => {
-    lesson.recordCrash();
+    if (mode === "first-gates") lesson.recordCrash();
     drone.reset();
     flightController.reset();
     gateCollisions.reset();
     crashTracker.reset();
+    raceCourse.reset();
+    lapTimer.reset();
     lessonPanel.render(lesson.state);
+    if (mode === "first-gates")
+      view.setExpectedGate(FIRST_GATES[lesson.state.stepIndex]);
+    else if (mode === "free-flight") view.clearExpectedGate();
   };
   const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
   document.querySelector("#reset")?.addEventListener("click", reset);
-  const updateCameraSettings = (): void => {
-    const angle = Number(angleInput?.value ?? 20);
-    const fov = Number(fovInput?.value ?? 95);
-    view.setFpvSettings(angle, fov);
-    document.querySelector("#camera-angle-value")!.textContent = `${angle}°`;
-    document.querySelector("#camera-fov-value")!.textContent = `${fov}°`;
-  };
-  angleInput?.addEventListener("input", updateCameraSettings);
-  fovInput?.addEventListener("input", updateCameraSettings);
-  updateCameraSettings();
-  showSticks?.addEventListener("change", () => {
-    stickVisualizer?.toggleAttribute("hidden", !showSticks.checked);
-  });
   const toggleCamera = (): void => {
     const fpvActive = view.toggleCamera();
     if (cameraMode) cameraMode.textContent = fpvActive ? "FPV" : "DEBUG";
@@ -121,6 +177,7 @@ async function start(): Promise<void> {
   let smoothedFps = 60;
   let cameraButtonPressed = false;
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
+  setMode(mode);
 
   const frame = (time: number): void => {
     gamepadInput.update();
@@ -137,21 +194,52 @@ async function start(): Promise<void> {
       const velocity = drone.body.linvel();
       const impactSpeed = Math.hypot(velocity.x, velocity.y, velocity.z);
       world.step();
-      crashTracker.update(impactSpeed, () => lesson.recordCrash());
+      crashTracker.update(impactSpeed, () => {
+        if (mode === "first-gates") lesson.recordCrash();
+      });
       gateCollisions.update((gateIndex) => {
-        lesson.update(0, [{ type: "gate-passed", gateIndex }]);
-        const state = lesson.state;
-        if (state.status === "completed") view.clearExpectedGate();
-        else view.setExpectedGate(FIRST_GATES[state.stepIndex]);
+        if (mode === "first-gates") {
+          lesson.update(0, [{ type: "gate-passed", gateIndex }]);
+          const state = lesson.state;
+          if (state.status === "completed") view.clearExpectedGate();
+          else view.setExpectedGate(FIRST_GATES[state.stepIndex]);
+        } else if (mode === "race" && gateIndex === raceCourse.expectedGate) {
+          if (gateIndex === 0 && !lapTimer.running) lapTimer.start(time / 1000);
+          const previousLaps = raceCourse.laps;
+          raceCourse.pass(gateIndex);
+          if (raceCourse.laps > previousLaps) lapTimer.finish(time / 1000);
+        }
       });
     });
     lesson.update((time - previousTime) / 1000);
     const lessonState = lesson.state;
     lessonPanel.render(lessonState);
+    if (mode === "race") lapTimer.update(time / 1000);
     if (gateReadout)
-      gateReadout.textContent = `${Math.min(lessonState.stepIndex + 1, 3)} / 3`;
+      gateReadout.textContent =
+        mode === "race"
+          ? `${raceCourse.expectedGate + 1} / 5`
+          : mode === "first-gates"
+            ? `${Math.min(lessonState.stepIndex + 1, 3)} / 3`
+            : "–";
     if (lapReadout)
-      lapReadout.textContent = lessonState.status === "completed" ? "✓" : "–";
+      lapReadout.textContent =
+        mode === "race"
+          ? String(raceCourse.laps)
+          : lessonState.status === "completed"
+            ? "✓"
+            : "–";
+    const formatRaceTime = (seconds?: number): string =>
+      seconds === undefined
+        ? "–"
+        : `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(Math.floor(seconds % 60)).padStart(2, "0")}.${String(Math.floor((seconds % 1) * 1000)).padStart(3, "0")}`;
+    document.querySelector<HTMLElement>("#race-time")!.textContent =
+      formatRaceTime(lapTimer.elapsedSeconds);
+    document.querySelector<HTMLElement>("#best-time")!.textContent =
+      formatRaceTime(lapTimer.best);
+    document.querySelector<HTMLElement>("#race-laps")!.textContent = String(
+      raceCourse.laps,
+    );
     smoothedFps +=
       (1000 / Math.max(1, time - previousTime) - smoothedFps) * 0.08;
     previousTime = time;

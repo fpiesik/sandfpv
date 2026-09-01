@@ -79,6 +79,67 @@ canvas {
   background: rgb(10 14 11 / 86%);
   backdrop-filter: blur(8px);
 }
+.mode-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 20rem;
+  background: rgb(10 14 11 / 86%);
+}
+.mode-selector button {
+  padding: 0.65rem 0.25rem;
+  border: 0;
+  border-bottom: 2px solid #354038;
+  color: #8f9c91;
+  background: transparent;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+  cursor: pointer;
+}
+.mode-selector button.active {
+  border-color: #ffb000;
+  color: #ffb000;
+  background: rgb(255 176 0 / 8%);
+}
+.race-panel {
+  width: 20rem;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid #ef596f;
+  background: rgb(10 14 11 / 86%);
+}
+.race-panel[hidden] {
+  display: none;
+}
+.race-panel header,
+.race-panel dl {
+  display: flex;
+  justify-content: space-between;
+}
+.race-panel small,
+.race-panel dt {
+  color: #8f9c91;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+.race-time {
+  margin: 0.7rem 0;
+  color: #ef596f;
+  font:
+    1.7rem ui-monospace,
+    monospace;
+}
+.race-panel dl {
+  margin: 0;
+}
+.race-panel dd {
+  margin: 0.2rem 0 0;
+  color: #ffb000;
+  font:
+    0.75rem ui-monospace,
+    monospace;
+}
 .lesson-panel header {
   display: flex;
   align-items: baseline;
@@ -268,7 +329,8 @@ canvas {
 
 .calibrate-button,
 .reset-button,
-.tuning-button {
+.tuning-button,
+.settings-button {
   position: fixed;
   bottom: 1.5rem;
   left: 1.5rem;
@@ -288,6 +350,9 @@ canvas {
 .tuning-button {
   bottom: 7.7rem;
 }
+.settings-button {
+  bottom: 10.8rem;
+}
 
 .tuning-panel {
   width: min(48rem, 100%);
@@ -297,6 +362,85 @@ canvas {
   border: 1px solid rgb(255 255 255 / 15%);
   background: #111713;
   box-shadow: 0 1.5rem 5rem #000;
+}
+.settings-panel {
+  width: min(38rem, 100%);
+  padding: 1.2rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: #111713;
+  box-shadow: 0 1.5rem 5rem #000;
+}
+.settings-panel header,
+.settings-panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.settings-panel header {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.settings-panel h2 {
+  margin: 0.2rem 0 0.8rem;
+}
+.settings-panel small,
+.settings-panel p {
+  color: #8f9c91;
+  font-size: 0.65rem;
+}
+.settings-panel button {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #4b574e;
+  color: inherit;
+  background: #1a221c;
+  cursor: pointer;
+}
+.settings-panel header button {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+}
+.settings-panel button.primary {
+  border-color: #ffb000;
+  color: #ffb000;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+.settings-grid label:not(.settings-check) {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem;
+  color: #aeb8ae;
+  font-size: 0.7rem;
+}
+.settings-grid output {
+  color: #fff;
+  font:
+    0.65rem ui-monospace,
+    monospace;
+}
+.settings-grid input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: #ffb000;
+}
+.settings-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #aeb8ae;
+  font-size: 0.7rem;
+}
+.settings-check input {
+  accent-color: #ffb000;
+}
+.settings-panel footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 10%);
 }
 .tuning-panel header,
 .tuning-panel footer,
@@ -723,7 +867,8 @@ canvas {
 }
 
 @media (max-width: 650px) {
-  .tuning-grid {
+  .tuning-grid,
+  .settings-grid {
     grid-template-columns: 1fr;
   }
   .flight-panels {
