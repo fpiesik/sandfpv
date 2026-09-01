@@ -13,6 +13,10 @@ Die Physik wird unabhängig von der Bildrate mit einem festen Zeitschritt von 12
 berechnet. `vite.config.ts` verwendet relative Asset-Pfade, damit der Build auch unter
 einer GitHub-Pages-Repository-URL ausgeliefert werden kann.
 
+## Dokumentation
+
+- [Einstellungen im Menü „Drohne Tunen“](docs/drohne-tunen.md)
+
 ## Qualität
 
 ```sh
