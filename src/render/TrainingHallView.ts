@@ -11,15 +11,16 @@ import {
 /** Visual representation only; physics and lap state live outside Three.js. */
 export class TrainingHallView {
   private readonly triggerMaterials: THREE.MeshBasicMaterial[] = [];
+  private readonly gateGroups: THREE.Group[] = [];
 
   constructor(scene: THREE.Scene) {
     for (const box of [...hallSurfaces, ...obstacles])
       scene.add(this.createBox(box));
 
     gates.forEach((gate, index) => {
-      const openingWidth = GATE_OPENING.width * gate.scale;
-      const openingHeight = GATE_OPENING.height * gate.scale;
-      const barThickness = GATE_BAR_THICKNESS * gate.scale;
+      const openingWidth = GATE_OPENING.width;
+      const openingHeight = GATE_OPENING.height;
+      const barThickness = GATE_BAR_THICKNESS;
       const group = new THREE.Group();
       group.position.set(...gate.position);
       group.rotation.y = gate.yaw;
@@ -68,6 +69,7 @@ export class TrainingHallView {
         object.receiveShadow = true;
       });
       scene.add(group);
+      this.gateGroups.push(group);
     });
     this.addReferenceGeometry(scene);
   }
@@ -126,6 +128,10 @@ export class TrainingHallView {
 
   clearExpectedGate(): void {
     this.triggerMaterials.forEach((material) => (material.visible = false));
+  }
+
+  setGateSize(scale: number): void {
+    this.gateGroups.forEach((gate) => gate.scale.setScalar(scale));
   }
 
   private createBox(definition: BoxDefinition): THREE.Mesh {
