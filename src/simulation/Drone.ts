@@ -40,8 +40,6 @@ export interface DroneConfig {
   };
   readonly integralLimit: number;
   readonly maxTorque: number;
-  readonly angleMaxTilt: number;
-  readonly angleLevelGain: number;
 }
 
 /** A high-performance 65 mm 1S whoop at approximately 25 g AUW. */
@@ -61,8 +59,6 @@ export const AIR65_II_FREESTYLE_CONFIG: DroneConfig = {
   ratePid: { kp: 0.00012, ki: 0.000025, kd: 0.000002 },
   integralLimit: 3,
   maxTorque: 0.003,
-  angleMaxTilt: Math.PI / 4,
-  angleLevelGain: 5,
 };
 
 export interface DroneSpawn {
@@ -227,8 +223,6 @@ function validateConfig(config: DroneConfig): void {
     ...Object.values(config.ratePid),
     config.integralLimit,
     config.maxTorque,
-    config.angleMaxTilt,
-    config.angleLevelGain,
   ];
   if (tuning.some((value) => !Number.isFinite(value) || value < 0))
     throw new RangeError("Flight-controller tuning must be non-negative");

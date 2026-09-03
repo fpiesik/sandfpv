@@ -169,12 +169,15 @@ async function start(): Promise<void> {
   let previousTime = performance.now();
   let smoothedFps = 60;
   let cameraButtonPressed = false;
+  let resetButtonPressed = false;
   document.querySelector<HTMLElement>("#loading")?.setAttribute("hidden", "");
   setMode(mode);
 
   const frame = (time: number): void => {
     gamepadInput.update();
     const controls = gamepadInput.read();
+    if (controls.reset && !resetButtonPressed) reset();
+    resetButtonPressed = controls.reset;
     const cameraButtonNow = gamepadManager.connectedGamepads.some(
       (gamepad) => gamepad.buttons[9]?.pressed,
     );
@@ -247,7 +250,7 @@ async function start(): Promise<void> {
     const signed = (value: number): string =>
       `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
     for (const [name, value] of Object.entries(controls)) {
-      if (name === "selfLevel" || name === "throttle") continue;
+      if (name === "reset" || name === "throttle") continue;
       const readout = document.querySelector<HTMLElement>(`#hud-${name}`);
       if (readout) readout.textContent = signed(value as number);
     }

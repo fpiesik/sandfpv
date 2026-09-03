@@ -1,28 +1,32 @@
 import type { AxisCalibration } from "./AxisNormalization";
 import type { ControlName } from "./InputSource";
 
-export const INPUT_CONFIGURATION_VERSION = 2;
-export const INPUT_CONFIGURATION_KEY = "sandfpv.input.v2";
+export const INPUT_CONFIGURATION_VERSION = 3;
+export const INPUT_CONFIGURATION_KEY = "sandfpv.input.v3";
+const LEGACY_INPUT_CONFIGURATION_KEY = "sandfpv.input.v2";
 
 export interface InputConfiguration {
   readonly version: typeof INPUT_CONFIGURATION_VERSION;
   readonly gamepadId: string;
   readonly axes: Record<ControlName, AxisCalibration>;
-  readonly selfLevelButton: number;
+  readonly resetButton: number;
 }
 
 export function loadInputConfiguration(
   storage: Pick<Storage, "getItem"> = localStorage,
 ): InputConfiguration | undefined {
   try {
-    const raw = storage.getItem(INPUT_CONFIGURATION_KEY);
+    const current = storage.getItem(INPUT_CONFIGURATION_KEY);
+    const raw = current ?? storage.getItem(LEGACY_INPUT_CONFIGURATION_KEY);
     if (!raw) return undefined;
-    const value = JSON.parse(raw) as Partial<InputConfiguration>;
+    const value = JSON.parse(raw) as Partial<InputConfiguration> & {
+      selfLevelButton?: number;
+    };
     if (
-      value.version !== INPUT_CONFIGURATION_VERSION ||
+      ![2, INPUT_CONFIGURATION_VERSION].includes(value.version ?? -1) ||
       typeof value.gamepadId !== "string" ||
       !value.axes ||
-      !Number.isInteger(value.selfLevelButton) ||
+      !Number.isInteger(value.resetButton ?? value.selfLevelButton) ||
       !["throttle", "yaw", "pitch", "roll"].every((name) => {
         const axis = value.axes?.[name as ControlName];
         return (
@@ -37,7 +41,11 @@ export function loadInputConfiguration(
       })
     )
       return undefined;
-    return value as InputConfiguration;
+    return {
+      ...value,
+      version: INPUT_CONFIGURATION_VERSION,
+      resetButton: value.resetButton ?? value.selfLevelButton,
+    } as InputConfiguration;
   } catch {
     return undefined;
   }
