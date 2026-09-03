@@ -17,8 +17,6 @@ const TEST_CONFIG: DroneConfig = {
   ratePid: { kp: 0.001, ki: 0, kd: 0 },
   integralLimit: 1,
   maxTorque: 0.01,
-  angleMaxTilt: Math.PI / 4,
-  angleLevelGain: 5,
 };
 
 beforeAll(async () => RAPIER.init());

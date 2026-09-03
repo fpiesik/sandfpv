@@ -16,8 +16,6 @@ export type DroneTuning = Pick<
   | "rateExpo"
   | "integralLimit"
   | "maxTorque"
-  | "angleMaxTilt"
-  | "angleLevelGain"
 > & {
   maxRates: DroneConfig["maxRates"];
   ratePid: DroneConfig["ratePid"];

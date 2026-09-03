@@ -1,9 +1,9 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import type { ControlState } from "../input/InputSource";
-import type { Drone, DroneConfig } from "./Drone";
+import type { Drone } from "./Drone";
 
 export interface FlightControllerDebug {
-  readonly mode: "ACRO" | "ANGLE";
+  readonly mode: "ACRO";
   readonly desiredRates: RAPIER.Vector;
   readonly actualRates: RAPIER.Vector;
   readonly torque: RAPIER.Vector;
@@ -40,13 +40,11 @@ export class FlightController {
     const config = this.drone.config;
     const rotation = this.drone.body.rotation();
     const actual = inverseRotate(rotation, this.drone.body.angvel());
-    const desired = controls.selfLevel
-      ? this.angleRates(controls, rotation, config)
-      : vector(
-          rateCurve(controls.pitch, config.maxRates.pitch, config.rateExpo),
-          rateCurve(controls.yaw, config.maxRates.yaw, config.rateExpo),
-          rateCurve(-controls.roll, config.maxRates.roll, config.rateExpo),
-        );
+    const desired = vector(
+      rateCurve(controls.pitch, config.maxRates.pitch, config.rateExpo),
+      rateCurve(controls.yaw, config.maxRates.yaw, config.rateExpo),
+      rateCurve(-controls.roll, config.maxRates.roll, config.rateExpo),
+    );
     const error = vector(
       desired.x - actual.x,
       desired.y - actual.y,
@@ -73,7 +71,7 @@ export class FlightController {
     this.drone.body.resetTorques(false);
     this.drone.body.addTorque(rotate(rotation, localTorque), true);
     this.debug = {
-      mode: controls.selfLevel ? "ANGLE" : "ACRO",
+      mode: "ACRO",
       desiredRates: desired,
       actualRates: actual,
       torque: localTorque,
@@ -87,29 +85,6 @@ export class FlightController {
   reset(): void {
     this.integral = vector();
     this.previousError = vector();
-  }
-
-  private angleRates(
-    controls: ControlState,
-    rotation: RAPIER.Rotation,
-    config: DroneConfig,
-  ): RAPIER.Vector {
-    // Local up expressed in world coordinates gives a singularity-free leveling error.
-    const up = rotate(rotation, { x: 0, y: 1, z: 0 });
-    const maxAngle = config.angleMaxTilt;
-    const targetRoll = controls.roll * maxAngle;
-    const targetPitch = controls.pitch * maxAngle;
-    return vector(
-      clamp(
-        targetPitch * config.angleLevelGain - up.z * config.angleLevelGain,
-        config.maxRates.pitch,
-      ),
-      rateCurve(controls.yaw, config.maxRates.yaw, config.rateExpo),
-      clamp(
-        -targetRoll * config.angleLevelGain - up.x * config.angleLevelGain,
-        config.maxRates.roll,
-      ),
-    );
   }
 }
 

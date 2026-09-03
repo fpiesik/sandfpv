@@ -173,8 +173,7 @@ Kurskorrekturen. Als Orientierung entsprechen 8 rad/s ungefähr 458 °/s.
 
 Die Rate-Werte sind Sollwerte. Ob sie tatsächlich erreicht werden, hängt unter
 anderem von PID-Abstimmung, angularer Dämpfung und dem intern begrenzten
-maximalen Drehmoment ab. Im Angle-Modus begrenzen Roll Rate und Pitch Rate
-außerdem die Geschwindigkeit des Selbstaufrichtens.
+maximalen Drehmoment ab.
 
 ## PID-Ratenregler
 

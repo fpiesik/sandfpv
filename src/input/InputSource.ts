@@ -5,7 +5,7 @@ export interface ControlState {
   readonly roll: number;
   readonly pitch: number;
   readonly yaw: number;
-  readonly selfLevel: boolean;
+  readonly reset: boolean;
 }
 
 /** Device-independent contract consumed by the flight simulation. */
@@ -20,5 +20,5 @@ export const NEUTRAL_CONTROLS: ControlState = {
   roll: 0,
   pitch: 0,
   yaw: 0,
-  selfLevel: false,
+  reset: false,
 };
