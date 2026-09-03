@@ -55,7 +55,10 @@ export class GamepadInput implements InputSource {
         normalizeCenteredAxis(raw("yaw"), calibration.yaw),
         this.deadband,
       ),
-      reset: gamepad.buttons[this.configuration.resetButton]?.pressed ?? false,
+      reset:
+        this.configuration.resetButton !== undefined
+          ? (gamepad.buttons[this.configuration.resetButton]?.pressed ?? false)
+          : false,
     };
   }
 }

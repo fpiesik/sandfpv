@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CalibrationWizard } from "./CalibrationWizard";
 import type { GamepadSnapshot } from "./GamepadManager";
 import {
@@ -63,6 +63,8 @@ const click = (root: RootStub, action: string): void =>
   } as unknown as Event);
 
 describe("CalibrationWizard", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it("does not replace its controls for every live gamepad sample", () => {
     let listener: (gamepads: readonly GamepadSnapshot[]) => void = () => {};
     const manager = {
@@ -142,5 +144,49 @@ describe("CalibrationWizard", () => {
     click(root, "map-reset");
     listener([snapshot(3)]);
     expect(root.innerHTML).toContain("Aktuell Button 3");
+  });
+
+  it("saves an initial calibration without assigning a reset button", () => {
+    let listener: (gamepads: readonly GamepadSnapshot[]) => void = () => {};
+    const manager = {
+      subscribe(next: typeof listener) {
+        listener = next;
+        next([]);
+        return () => {};
+      },
+    };
+    const saved: InputConfiguration[] = [];
+    const root = new RootStub();
+    vi.stubGlobal("localStorage", { setItem: vi.fn() });
+    const wizard = new CalibrationWizard(
+      root as unknown as HTMLElement,
+      manager as never,
+      (next) => saved.push(next),
+    );
+    const values = [0, 0, 0, 0];
+    const snapshot = (): GamepadSnapshot => ({
+      id: "controller",
+      index: 0,
+      mapping: "standard",
+      axes: values,
+      buttons: [],
+      timestamp: values.reduce((sum, value) => sum + value, 0),
+    });
+
+    wizard.open();
+    listener([snapshot()]);
+    for (let axis = 0; axis < values.length; axis++) {
+      values[axis] = 0.8;
+      listener([snapshot()]);
+      click(root, "next");
+    }
+
+    expect(root.innerHTML).toContain("Reset-Taste (optional)");
+    expect(root.innerHTML).toMatch(/data-action="next"\s*>Speichern/);
+    click(root, "next");
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0].resetButton).toBeUndefined();
+    expect(root.hasAttribute("hidden")).toBe(true);
   });
 });

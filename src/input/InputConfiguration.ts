@@ -9,7 +9,7 @@ export interface InputConfiguration {
   readonly version: typeof INPUT_CONFIGURATION_VERSION;
   readonly gamepadId: string;
   readonly axes: Record<ControlName, AxisCalibration>;
-  readonly resetButton: number;
+  readonly resetButton?: number;
 }
 
 export function loadInputConfiguration(
@@ -22,11 +22,15 @@ export function loadInputConfiguration(
     const value = JSON.parse(raw) as Partial<InputConfiguration> & {
       selfLevelButton?: number;
     };
+    const resetButton =
+      value.resetButton === undefined
+        ? value.selfLevelButton
+        : value.resetButton;
     if (
       ![2, INPUT_CONFIGURATION_VERSION].includes(value.version ?? -1) ||
       typeof value.gamepadId !== "string" ||
       !value.axes ||
-      !Number.isInteger(value.resetButton ?? value.selfLevelButton) ||
+      (resetButton !== undefined && !Number.isInteger(resetButton)) ||
       !["throttle", "yaw", "pitch", "roll"].every((name) => {
         const axis = value.axes?.[name as ControlName];
         return (
@@ -44,7 +48,7 @@ export function loadInputConfiguration(
     return {
       ...value,
       version: INPUT_CONFIGURATION_VERSION,
-      resetButton: value.resetButton ?? value.selfLevelButton,
+      resetButton,
     } as InputConfiguration;
   } catch {
     return undefined;
