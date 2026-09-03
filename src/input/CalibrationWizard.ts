@@ -33,12 +33,14 @@ export class CalibrationWizard {
   private maximum = -Infinity;
   private renderedState?: string;
   private resetButton?: number;
+  private mappingResetButton = false;
   private readonly calibrated = new Map<ControlName, AxisCalibration>();
 
   constructor(
     private readonly root: HTMLElement,
     manager: GamepadManager,
     private readonly onSave: (configuration: InputConfiguration) => void,
+    private configuration?: InputConfiguration,
   ) {
     manager.subscribe((gamepads) => this.onGamepads(gamepads));
     this.root.addEventListener("click", this.onClick);
@@ -49,7 +51,8 @@ export class CalibrationWizard {
     this.gamepad = undefined;
     this.controlIndex = 0;
     this.calibrated.clear();
-    this.resetButton = undefined;
+    this.resetButton = this.configuration?.resetButton;
+    this.mappingResetButton = false;
     this.resetDetection();
     this.renderedState = undefined;
     this.root.removeAttribute("hidden");
@@ -67,12 +70,15 @@ export class CalibrationWizard {
     }
     if (this.root.hasAttribute("hidden")) return;
     if (this.gamepad && this.controlIndex < ORDER.length) this.capture();
-    else if (this.gamepad) {
+    else if (this.gamepad && this.mappingResetButton) {
       const button = this.gamepad.buttons.findIndex(({ pressed }) => pressed);
       if (button >= 0 && button !== this.resetButton) {
         this.resetButton = button;
+        this.mappingResetButton = false;
         this.renderedState = undefined;
       }
+      this.render();
+    } else if (this.gamepad) {
       this.render();
     } else if (connectionChanged) this.render();
   }
@@ -117,7 +123,7 @@ export class CalibrationWizard {
 
   private render(): void {
     const control = ORDER[this.controlIndex];
-    const renderedState = `${this.gamepad?.id ?? ""}:${this.controlIndex}:${this.detectedAxis ?? ""}:${this.resetButton ?? ""}`;
+    const renderedState = `${this.gamepad?.id ?? ""}:${this.controlIndex}:${this.detectedAxis ?? ""}:${this.resetButton ?? ""}:${this.mappingResetButton}`;
     if (this.renderedState === renderedState) {
       this.updateReadings();
       return;
@@ -132,8 +138,8 @@ export class CalibrationWizard {
       <header><div><small>INPUT-KALIBRIERUNG</small><h2 id="wizard-title">${control ? `${LABELS[control]} zuordnen` : "Kalibrierung abgeschlossen"}</h2></div><button data-action="close" aria-label="Schließen">×</button></header>
       <ol class="wizard-progress">${progress}</ol>
       ${!this.gamepad ? '<p class="wizard__empty">Gamepad verbinden und eine Taste drücken.</p>' : control ? `<div class="wizard-instruction"><strong>${DIRECTIONS[control]}</strong><p>${axisFound ? `Achse ${this.detectedAxis} erkannt. Bewege sie über den gesamten Bereich.` : "Warte auf eine deutliche Achsenbewegung …"}</p></div><dl class="wizard-reading"><div><dt>Achse</dt><dd data-reading="axis">${this.detectedAxis ?? "—"}</dd></div><div><dt>Minimum</dt><dd data-reading="minimum">${this.format(this.minimum)}</dd></div><div><dt>Maximum</dt><dd data-reading="maximum">${this.format(this.maximum)}</dd></div><div><dt>Center</dt><dd data-reading="center">${this.format(this.baseline[this.detectedAxis ?? -1])}</dd></div></dl>` : '<p class="wizard-success">Alle vier Steuerachsen wurden erkannt. Du kannst Deadband und Invertierung prüfen und die Konfiguration speichern.</p>'}
-      ${!control ? `<div class="wizard-instruction"><strong>Reset-Taste zuordnen</strong><p>${this.resetButton === undefined ? "Betätige die gewünschte Controller-Taste …" : `Button ${this.resetButton} erkannt.`}</p></div>${this.settings()}` : ""}
-      <footer><button data-action="restart">Neu starten</button><button class="primary" data-action="next" ${this.gamepad && (axisFound || (!control && this.resetButton !== undefined)) ? "" : "disabled"}>${control ? "Achse übernehmen" : "Speichern"}</button></footer>
+      ${!control ? `<div class="wizard-instruction"><strong>Reset-Taste</strong><p>${this.mappingResetButton ? "Betätige die gewünschte Controller-Taste …" : this.resetButton === undefined ? "Noch keine Reset-Taste zugeordnet." : `Aktuell Button ${this.resetButton}.`}</p><button data-action="map-reset">${this.mappingResetButton ? "Warte auf Tastendruck …" : this.resetButton === undefined ? "Reset-Taste zuordnen" : "Reset-Taste neu zuordnen"}</button></div>${this.settings()}` : ""}
+      <footer><button data-action="restart">Neu starten</button>${control && this.configuration ? '<button data-action="skip-axes">Nur Invertierung einstellen</button>' : ""}<button class="primary" data-action="next" ${this.gamepad && (axisFound || (!control && this.resetButton !== undefined)) ? "" : "disabled"}>${control ? "Achse übernehmen" : "Speichern"}</button></footer>
     </div>`;
   }
 
@@ -168,9 +174,19 @@ export class CalibrationWizard {
     if (action === "restart") {
       this.controlIndex = 0;
       this.calibrated.clear();
-      this.resetButton = undefined;
+      this.resetButton = this.configuration?.resetButton;
+      this.mappingResetButton = false;
       this.resetDetection();
     }
+    if (action === "skip-axes" && this.configuration) {
+      for (const name of ORDER)
+        this.calibrated.set(name, { ...this.configuration.axes[name] });
+      this.resetButton = this.configuration.resetButton;
+      this.controlIndex = ORDER.length;
+      this.mappingResetButton = false;
+      this.resetDetection();
+    }
+    if (action === "map-reset") this.mappingResetButton = true;
     if (action === "next") {
       const control = ORDER[this.controlIndex];
       if (control && this.detectedAxis !== undefined) {
@@ -231,6 +247,7 @@ export class CalibrationWizard {
       resetButton: this.resetButton,
     };
     saveInputConfiguration(configuration);
+    this.configuration = configuration;
     this.onSave(configuration);
     this.root.setAttribute("hidden", "");
   }

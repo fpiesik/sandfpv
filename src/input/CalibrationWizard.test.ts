@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { CalibrationWizard } from "./CalibrationWizard";
 import type { GamepadSnapshot } from "./GamepadManager";
+import {
+  INPUT_CONFIGURATION_VERSION,
+  type InputConfiguration,
+} from "./InputConfiguration";
 
 class RootStub {
   innerHTMLWrites = 0;
+  clickListener?: (event: Event) => void;
   private markup = "";
   private readonly attributes = new Set(["hidden"]);
 
@@ -16,7 +21,9 @@ class RootStub {
     return this.markup;
   }
 
-  addEventListener(): void {}
+  addEventListener(name: string, listener: EventListener): void {
+    if (name === "click") this.clickListener = listener;
+  }
   querySelector(): null {
     return null;
   }
@@ -30,6 +37,30 @@ class RootStub {
     this.attributes.add(name);
   }
 }
+
+const configuration: InputConfiguration = {
+  version: INPUT_CONFIGURATION_VERSION,
+  gamepadId: "controller",
+  resetButton: 7,
+  axes: Object.fromEntries(
+    ["throttle", "yaw", "pitch", "roll"].map((name, axis) => [
+      name,
+      {
+        axis,
+        minimum: -1,
+        maximum: 1,
+        center: 0,
+        inverted: axis === 2,
+        deadband: 0.05,
+      },
+    ]),
+  ) as InputConfiguration["axes"],
+};
+
+const click = (root: RootStub, action: string): void =>
+  root.clickListener?.({
+    target: { closest: () => ({ dataset: { action } }) },
+  } as unknown as Event);
 
 describe("CalibrationWizard", () => {
   it("does not replace its controls for every live gamepad sample", () => {
@@ -68,5 +99,48 @@ describe("CalibrationWizard", () => {
     listener([snapshot(0.8)]);
     listener([snapshot(1)]);
     expect(root.innerHTMLWrites).toBe(detectedWrites);
+  });
+
+  it("skips axis assignment without changing it and maps reset on demand", () => {
+    let listener: (gamepads: readonly GamepadSnapshot[]) => void = () => {};
+    const manager = {
+      subscribe(next: typeof listener) {
+        listener = next;
+        next([]);
+        return () => {};
+      },
+    };
+    const root = new RootStub();
+    new CalibrationWizard(
+      root as unknown as HTMLElement,
+      manager as never,
+      () => {},
+      configuration,
+    ).open();
+    const snapshot = (pressedButton?: number): GamepadSnapshot => ({
+      id: "controller",
+      index: 0,
+      mapping: "standard",
+      axes: [0, 0, 0, 0],
+      buttons: Array.from({ length: 8 }, (_, index) => ({
+        pressed: index === pressedButton,
+        touched: index === pressedButton,
+        value: index === pressedButton ? 1 : 0,
+      })),
+      timestamp: pressedButton ?? 0,
+    });
+
+    listener([snapshot()]);
+    expect(root.innerHTML).toContain("Nur Invertierung einstellen");
+    click(root, "skip-axes");
+    expect(root.innerHTML).toContain("Throttle · Achse 0");
+    expect(root.innerHTML).toContain('data-invert="pitch" checked');
+    expect(root.innerHTML).toContain("Aktuell Button 7");
+
+    listener([snapshot(3)]);
+    expect(root.innerHTML).toContain("Aktuell Button 7");
+    click(root, "map-reset");
+    listener([snapshot(3)]);
+    expect(root.innerHTML).toContain("Aktuell Button 3");
   });
 });

@@ -39,10 +39,8 @@ async function start(): Promise<void> {
 
   const view = new Scene(canvas);
   const gamepadManager = new GamepadManager();
-  const gamepadInput = new GamepadInput(
-    gamepadManager,
-    loadInputConfiguration(),
-  );
+  const inputConfiguration = loadInputConfiguration();
+  const gamepadInput = new GamepadInput(gamepadManager, inputConfiguration);
   let settings = loadAppSettings();
   gamepadInput.setDeadband(settings.deadband);
   const controllerInspector = new ControllerInspector(inspectorElement);
@@ -53,6 +51,7 @@ async function start(): Promise<void> {
     wizardElement,
     gamepadManager,
     (configuration) => gamepadInput.setConfiguration(configuration),
+    inputConfiguration,
   );
   document
     .querySelector("#calibrate")
