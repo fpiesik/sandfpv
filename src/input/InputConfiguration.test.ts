@@ -38,4 +38,24 @@ describe("loadInputConfiguration", () => {
       resetButton: 7,
     });
   });
+
+  it("loads a current configuration without an optional reset button", () => {
+    const current = JSON.stringify({
+      version: INPUT_CONFIGURATION_VERSION,
+      gamepadId: "controller",
+      axes,
+    });
+    const storage = {
+      getItem(key: string) {
+        return key === "sandfpv.input.v3" ? current : null;
+      },
+    };
+
+    expect(loadInputConfiguration(storage)).toMatchObject({
+      version: INPUT_CONFIGURATION_VERSION,
+      gamepadId: "controller",
+      axes,
+    });
+    expect(loadInputConfiguration(storage)?.resetButton).toBeUndefined();
+  });
 });
