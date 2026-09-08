@@ -105,6 +105,8 @@ async function start(): Promise<void> {
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
+  const cameraAngleReadout =
+    document.querySelector<HTMLElement>("#camera-angle");
   const crosshair = document.querySelector<HTMLElement>("#crosshair");
   const lessonContainer = document.querySelector<HTMLElement>("#lesson")!;
   const racePanel = document.querySelector<HTMLElement>("#race-panel")!;
@@ -181,14 +183,31 @@ async function start(): Promise<void> {
     closeMenu();
   });
   openMenu();
-  addEventListener("keydown", ({ code, repeat }) => {
-    if (repeat) return;
+  const setCameraAngle = (cameraAngle: number): void => {
+    settings = {
+      ...settings,
+      cameraAngle: Math.min(60, Math.max(0, cameraAngle)),
+    };
+    view.setFpvSettings(settings.cameraAngle, settings.fov);
+    if (cameraAngleReadout)
+      cameraAngleReadout.textContent = `${settings.cameraAngle}°`;
+    saveAppSettings(settings);
+  };
+  setCameraAngle(settings.cameraAngle);
+  addEventListener("keydown", (event) => {
+    const { code, repeat } = event;
+    const adjustsCameraAngle = code === "ArrowUp" || code === "ArrowDown";
+    if (repeat && !adjustsCameraAngle) return;
     if (code === "Escape") {
       if (menu.hidden) openMenu();
       else showMenuPage("home");
       return;
     }
     if (!menu.hidden) return;
+    if (adjustsCameraAngle) {
+      event.preventDefault();
+      setCameraAngle(settings.cameraAngle + (code === "ArrowUp" ? 1 : -1));
+    }
     if (code === "KeyC") toggleCamera();
     if (code === "KeyR") reset();
   });
