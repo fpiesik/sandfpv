@@ -4,7 +4,7 @@ import { CalibrationWizard } from "./input/CalibrationWizard";
 import { GamepadInput } from "./input/GamepadInput";
 import { GamepadManager } from "./input/GamepadManager";
 import { loadInputConfiguration } from "./input/InputConfiguration";
-import { Scene } from "./render/Scene";
+import { Scene, type FlightEnvironment } from "./render/Scene";
 import {
   FIRST_GATES,
   createFirstGatesLesson,
@@ -175,6 +175,10 @@ async function start(): Promise<void> {
       ),
     );
   document.querySelector("#start-flight")?.addEventListener("click", () => {
+    const environment = document.querySelector<HTMLInputElement>(
+      'input[name="environment"]:checked',
+    )?.value as FlightEnvironment | undefined;
+    view.setEnvironment(environment ?? "training-hall");
     const selected = document.querySelector<HTMLInputElement>(
       'input[name="flight-mode"]:checked',
     )?.value as FlightMode | undefined;

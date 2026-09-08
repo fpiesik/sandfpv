@@ -13,7 +13,7 @@ export class TrainingHallView {
   private readonly triggerMaterials: THREE.MeshBasicMaterial[] = [];
   private readonly gateGroups: THREE.Group[] = [];
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Object3D) {
     for (const box of [...hallSurfaces, ...obstacles])
       scene.add(this.createBox(box));
 
@@ -74,7 +74,7 @@ export class TrainingHallView {
     this.addReferenceGeometry(scene);
   }
 
-  private addReferenceGeometry(scene: THREE.Scene): void {
+  private addReferenceGeometry(scene: THREE.Object3D): void {
     const lineMaterial = new THREE.MeshStandardMaterial({
       color: 0xe7ddbd,
       roughness: 0.9,
