@@ -16,12 +16,171 @@
         aria-label="3D-Ansicht des FPV-Simulators"
       ></canvas>
       <div id="crosshair" class="crosshair" aria-hidden="true"></div>
+      <main id="main-menu" class="main-menu" aria-label="Hauptmenü">
+        <section class="menu-shell">
+          <header class="menu-brand">
+            <span class="brand-mark">S</span>
+            <div>
+              <strong>SAND<span>FPV</span></strong
+              ><small>FPV SIMULATOR</small>
+            </div>
+          </header>
+          <div class="menu-content">
+            <div id="menu-home" class="menu-page">
+              <p class="eyebrow">HAUPTMENÜ</p>
+              <h1>Bereit zum<br /><em>Abheben?</em></h1>
+              <nav class="menu-navigation">
+                <button data-menu="fly">
+                  <b>01</b
+                  ><span
+                    ><strong>FLIEGEN</strong
+                    ><small>Umgebung, Modus &amp; Track wählen</small></span
+                  ><i>→</i>
+                </button>
+                <button data-menu="drones">
+                  <b>02</b
+                  ><span
+                    ><strong>DROHNEN</strong
+                    ><small>Auswahl &amp; Setup bearbeiten</small></span
+                  ><i>→</i>
+                </button>
+                <button data-menu="input">
+                  <b>03</b
+                  ><span
+                    ><strong>INPUT</strong
+                    ><small
+                      >Controller &amp; Keyboard konfigurieren</small
+                    ></span
+                  ><i>→</i>
+                </button>
+                <button data-menu="graphics">
+                  <b>04</b
+                  ><span
+                    ><strong>SETTINGS</strong
+                    ><small>Grafik &amp; Sound einstellen</small></span
+                  ><i>→</i>
+                </button>
+              </nav>
+            </div>
+            <div id="menu-fly" class="menu-page" hidden>
+              <button class="menu-back" data-menu="home">← HAUPTMENÜ</button>
+              <p class="eyebrow">FLUG VORBEREITEN</p>
+              <h2>Wähle dein Setup</h2>
+              <div class="flight-options">
+                <fieldset>
+                  <legend>UMGEBUNG</legend>
+                  <label class="option-card"
+                    ><input type="radio" name="environment" checked /><span
+                      ><b>TRAINING HALL</b
+                      ><small>Indoor · Industrial</small></span
+                    ><i>01</i></label
+                  ><label class="option-card disabled"
+                    ><input type="radio" name="environment" disabled /><span
+                      ><b>DESERT RUINS</b
+                      ><small>Demnächst verfügbar</small></span
+                    ><i>🔒</i></label
+                  >
+                </fieldset>
+                <fieldset>
+                  <legend>FLUGMODUS</legend>
+                  <div class="segmented">
+                    <label
+                      ><input
+                        type="radio"
+                        name="flight-mode"
+                        value="free-flight"
+                        checked
+                      /><span>FREEFLIGHT</span></label
+                    ><label
+                      ><input
+                        type="radio"
+                        name="flight-mode"
+                        value="race"
+                      /><span>INFINITE RACE</span></label
+                    >
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>TRACK</legend>
+                  <label class="option-card"
+                    ><input type="radio" name="track" checked /><span
+                      ><b>FIVE GATES</b
+                      ><small>5 Gates · Einsteiger</small></span
+                    ><i>01</i></label
+                  >
+                  <p class="track-note">
+                    TRACK EDITOR <span>COMING SOON</span>
+                  </p>
+                </fieldset>
+              </div>
+              <button id="start-flight" class="launch-button">
+                FLUG STARTEN <span>↗</span>
+              </button>
+            </div>
+            <div id="menu-drones" class="menu-page" hidden>
+              <button class="menu-back" data-menu="home">← HAUPTMENÜ</button>
+              <p class="eyebrow">HANGAR</p>
+              <h2>Deine Drohne</h2>
+              <div class="drone-preview">
+                <div class="drone-glyph">◇</div>
+                <small>MICRO QUAD</small><strong>AIR65 II</strong>
+                <p>Leicht, agil und perfekt für Indoor-Racing.</p>
+              </div>
+              <button id="menu-open-tuning" class="launch-button">
+                SETUP BEARBEITEN <span>→</span>
+              </button>
+            </div>
+            <div id="menu-input" class="menu-page" hidden>
+              <button class="menu-back" data-menu="home">← HAUPTMENÜ</button>
+              <p class="eyebrow">STEUERUNG</p>
+              <h2>Input konfigurieren</h2>
+              <div class="input-cards">
+                <article>
+                  <small>CONTROLLER</small>
+                  <h3>Gamepad / Fernsteuerung</h3>
+                  <p>Achsen kalibrieren und Reset-Button zuordnen.</p>
+                  <button id="menu-calibrate">KALIBRIEREN</button>
+                </article>
+                <article>
+                  <small>KEYBOARD</small>
+                  <h3>Tastatur</h3>
+                  <dl>
+                    <dt>Kamera</dt>
+                    <dd>C</dd>
+                    <dt>Reset</dt>
+                    <dd>R</dd>
+                    <dt>Menü</dt>
+                    <dd>ESC</dd>
+                  </dl>
+                </article>
+              </div>
+            </div>
+            <div id="menu-graphics" class="menu-page" hidden>
+              <button class="menu-back" data-menu="home">← HAUPTMENÜ</button>
+              <p class="eyebrow">SETTINGS</p>
+              <h2>Grafik &amp; Sound</h2>
+              <div class="settings-categories">
+                <article>
+                  <small>GRAFIK</small>
+                  <h3>Darstellung</h3>
+                  <p>Auflösung und Detailstufe anpassen.</p>
+                  <button id="menu-open-settings">GRAFIK ÖFFNEN</button>
+                </article>
+                <article class="disabled">
+                  <small>SOUND</small>
+                  <h3>Audio</h3>
+                  <p>Soundeinstellungen folgen in einer kommenden Version.</p>
+                  <span>COMING SOON</span>
+                </article>
+              </div>
+            </div>
+          </div>
+          <footer class="menu-footer">
+            <span>SAND FPV // BUILD 0.1</span><span><kbd>ESC</kbd> ZURÜCK</span>
+          </footer>
+        </section>
+      </main>
       <div class="flight-panels">
-        <nav class="mode-selector" aria-label="Flugmodus">
-          <button data-mode="free-flight">FREE FLIGHT</button>
-          <button data-mode="first-gates">FIRST GATES</button>
-          <button data-mode="race">RACE</button>
-        </nav>
         <aside id="lesson" class="lesson-panel" aria-live="polite"></aside>
         <aside id="race-panel" class="race-panel" aria-live="polite" hidden>
           <header><small>FÜNF-GATE-KURS</small><strong>RACE</strong></header>
@@ -60,11 +219,6 @@
           </dl>
           <small>START / C: KAMERA · R: RESET</small>
         </aside>
-        <aside class="debug-panel" aria-label="Flight Controller Debug">
-          <strong>FLIGHT CONTROLLER</strong>
-          <small>ROLL / PITCH / YAW</small>
-          <dl id="flight-debug"></dl>
-        </aside>
       </div>
       <aside
         id="stick-visualizer"
@@ -77,19 +231,6 @@
         </div>
       </aside>
       <button id="reset" class="reset-button">DROHNE RESETTEN</button>
-      <button id="open-tuning" class="tuning-button">DROHNE TUNEN</button>
-      <button id="open-settings" class="settings-button">EINSTELLUNGEN</button>
-      <button id="calibrate" class="calibrate-button">INPUT KALIBRIEREN</button>
-      <aside class="controller-panel" aria-label="Controller Inspector">
-        <div class="controller-panel__title">
-          <div>
-            <span>INPUT</span>
-            <h2>CONTROLLER INSPECTOR</h2>
-          </div>
-          <span class="live-badge">LIVE</span>
-        </div>
-        <div id="controllers" aria-live="polite"></div>
-      </aside>
       <div id="calibration" class="wizard-layer" hidden></div>
       <div id="tuning" class="wizard-layer" hidden></div>
       <div id="settings" class="wizard-layer" hidden></div>

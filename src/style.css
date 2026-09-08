@@ -22,6 +22,338 @@ canvas {
   height: 100%;
 }
 
+.main-menu {
+  position: fixed;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3.5rem);
+  background:
+    radial-gradient(circle at 78% 38%, rgb(255 176 0 / 11%), transparent 28%),
+    linear-gradient(105deg, rgb(7 11 8 / 98%) 35%, rgb(12 18 13 / 90%));
+  backdrop-filter: blur(18px);
+}
+.main-menu[hidden],
+.menu-page[hidden] {
+  display: none;
+}
+.menu-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: min(76rem, 100%);
+  height: min(48rem, 100%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: linear-gradient(125deg, rgb(14 20 16 / 96%), rgb(9 13 10 / 94%));
+  box-shadow: 0 2rem 8rem #000;
+}
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.3rem 2rem;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+}
+.brand-mark {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border: 1px solid #ffb000;
+  color: #ffb000;
+  font-weight: 900;
+  transform: skew(-8deg);
+}
+.menu-brand strong {
+  display: block;
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+}
+.menu-brand strong span,
+.menu-page em {
+  color: #ffb000;
+  font-style: normal;
+}
+.menu-brand small,
+.eyebrow {
+  color: #768079;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+  letter-spacing: 0.24em;
+}
+.menu-content {
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(2rem, 7vw, 6rem);
+}
+.menu-page {
+  max-width: 44rem;
+  animation: menu-in 0.25s ease-out;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+}
+.menu-page h1 {
+  margin: 0.6rem 0 2rem;
+  font-size: clamp(2.7rem, 6vw, 5rem);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+.menu-page h2 {
+  margin: 0.5rem 0 2rem;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  letter-spacing: -0.04em;
+}
+.menu-navigation {
+  display: grid;
+  gap: 0.45rem;
+  width: min(35rem, 100%);
+}
+.menu-navigation button {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  color: inherit;
+  background: rgb(255 255 255 / 2%);
+  text-align: left;
+  cursor: pointer;
+  transition: 0.18s;
+}
+.menu-navigation button:hover {
+  border-color: #ffb000;
+  background: rgb(255 176 0 / 7%);
+  transform: translateX(0.4rem);
+}
+.menu-navigation button > b {
+  color: #59625b;
+  font:
+    0.6rem ui-monospace,
+    monospace;
+}
+.menu-navigation strong,
+.menu-navigation small {
+  display: block;
+}
+.menu-navigation strong {
+  letter-spacing: 0.1em;
+}
+.menu-navigation small {
+  margin-top: 0.25rem;
+  color: #879189;
+}
+.menu-navigation i {
+  color: #ffb000;
+  font-size: 1.2rem;
+  font-style: normal;
+}
+.menu-back {
+  margin-bottom: 1.6rem;
+  padding: 0;
+  border: 0;
+  color: #8f9c91;
+  background: none;
+  font:
+    0.6rem ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.flight-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.flight-options fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.flight-options legend {
+  margin-bottom: 0.7rem;
+  color: #788279;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+  letter-spacing: 0.18em;
+}
+.option-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  cursor: pointer;
+}
+.option-card:has(input:checked) {
+  border-color: #ffb000;
+  background: rgb(255 176 0 / 6%);
+}
+.option-card input,
+.segmented input {
+  position: absolute;
+  opacity: 0;
+}
+.option-card b,
+.option-card small {
+  display: block;
+}
+.option-card b {
+  font-size: 0.7rem;
+}
+.option-card small {
+  margin-top: 0.25rem;
+  color: #7f8981;
+  font-size: 0.55rem;
+}
+.option-card i {
+  color: #ffb000;
+  font:
+    0.6rem ui-monospace,
+    monospace;
+}
+.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.segmented {
+  display: grid;
+  gap: 0.5rem;
+}
+.segmented span {
+  display: block;
+  padding: 1rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  font-size: 0.65rem;
+  text-align: center;
+  cursor: pointer;
+}
+.segmented input:checked + span {
+  border-color: #ffb000;
+  color: #ffb000;
+  background: rgb(255 176 0 / 6%);
+}
+.track-note {
+  padding: 0.8rem;
+  color: #687169;
+  font:
+    0.55rem ui-monospace,
+    monospace;
+}
+.track-note span {
+  float: right;
+  color: #ffb000;
+}
+.launch-button,
+.input-cards button,
+.settings-categories button {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid #ffb000;
+  color: #101511;
+  background: #ffb000;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.launch-button span {
+  margin-left: 1.5rem;
+}
+.drone-preview {
+  display: grid;
+  justify-items: center;
+  padding: 2rem;
+  border: 1px solid rgb(255 255 255 / 9%);
+  background: radial-gradient(circle, rgb(255 176 0 / 10%), transparent 60%);
+}
+.drone-glyph {
+  color: #ffb000;
+  font-size: 7rem;
+  line-height: 1;
+}
+.drone-preview strong {
+  margin: 0.4rem;
+  font-size: 1.6rem;
+}
+.drone-preview p {
+  color: #8f9c91;
+}
+.input-cards,
+.settings-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.input-cards article,
+.settings-categories article {
+  padding: 1.4rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 2%);
+}
+.input-cards small,
+.settings-categories small {
+  color: #ffb000;
+  letter-spacing: 0.14em;
+}
+.input-cards p,
+.settings-categories p {
+  color: #8f9c91;
+  line-height: 1.5;
+}
+.input-cards dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.7rem;
+}
+.input-cards dd {
+  color: #ffb000;
+  font-family: ui-monospace, monospace;
+}
+.menu-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  color: #59625b;
+  font:
+    0.5rem ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+.menu-footer kbd {
+  padding: 0.2rem 0.35rem;
+  border: 1px solid #59625b;
+}
+.menu-open .flight-panels,
+.menu-open .stick-visualizer,
+.menu-open .reset-button,
+.menu-open .crosshair {
+  display: none;
+}
+@media (max-width: 700px) {
+  .flight-options,
+  .input-cards,
+  .settings-categories {
+    grid-template-columns: 1fr;
+  }
+  .menu-content {
+    padding: 1.5rem;
+  }
+  .menu-page h1 {
+    font-size: 2.7rem;
+  }
+  .menu-footer {
+    padding: 0.8rem 1rem;
+  }
+}
+
 .crosshair {
   position: fixed;
   top: 50%;
