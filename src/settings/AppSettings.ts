@@ -7,6 +7,8 @@ export interface AppSettings {
   readonly fov: number;
   readonly gateSize: number;
   readonly showStickVisualizer: boolean;
+  readonly resolutionScale: number;
+  readonly detailLevel: "low" | "medium" | "high";
 }
 
 interface StoredSettings {
@@ -22,6 +24,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   fov: 95,
   gateSize: 1.5,
   showStickVisualizer: true,
+  resolutionScale: 1,
+  detailLevel: "high",
 };
 
 export function loadAppSettings(storage: Storage = localStorage): AppSettings {
@@ -62,5 +66,14 @@ function sanitize(settings: AppSettings): AppSettings {
     fov: clamp(settings.fov, 60, 130, DEFAULT_APP_SETTINGS.fov),
     gateSize: clamp(settings.gateSize, 0.75, 3, DEFAULT_APP_SETTINGS.gateSize),
     showStickVisualizer: Boolean(settings.showStickVisualizer),
+    resolutionScale: clamp(
+      settings.resolutionScale,
+      0.5,
+      1,
+      DEFAULT_APP_SETTINGS.resolutionScale,
+    ),
+    detailLevel: ["low", "medium", "high"].includes(settings.detailLevel)
+      ? settings.detailLevel
+      : DEFAULT_APP_SETTINGS.detailLevel,
   };
 }

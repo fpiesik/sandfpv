@@ -104,6 +104,19 @@ export class Scene {
     this.hall.setGateSize(scale);
   }
 
+  setGraphics(
+    resolutionScale: number,
+    detailLevel: "low" | "medium" | "high",
+  ): void {
+    this.renderer.setPixelRatio(
+      Math.min(devicePixelRatio, 2) * resolutionScale,
+    );
+    this.renderer.shadowMap.enabled = detailLevel !== "low";
+    this.scene.fog =
+      detailLevel === "high" ? new THREE.Fog(0x9eb7bd, 25, 80) : null;
+    this.resize();
+  }
+
   private readonly resize = (): void => {
     const { clientWidth: width, clientHeight: height } =
       this.renderer.domElement;

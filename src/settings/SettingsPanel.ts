@@ -8,14 +8,11 @@ export class SettingsPanel {
 
   open(settings: AppSettings): void {
     this.element.innerHTML = `<form class="settings-panel" aria-labelledby="settings-title">
-      <header><div><small>LIVE · LOKAL GESPEICHERT</small><h2 id="settings-title">FLUG-EINSTELLUNGEN</h2></div><button type="button" data-close aria-label="Schließen">×</button></header>
-      <p>Alle Änderungen werden unmittelbar auf Fluggefühl und Ansicht angewendet.</p>
+      <header><div><small>SETTINGS · GRAFIK</small><h2 id="settings-title">GRAFIK-EINSTELLUNGEN</h2></div><button type="button" data-close aria-label="Schließen">×</button></header>
+      <p>Auflösung und Details werden unmittelbar auf die 3D-Ansicht angewendet.</p>
       <div class="settings-grid">
-        ${field("deadband", "Deadband", settings.deadband, 0, 0.25, 0.01, "")}
-        ${field("cameraAngle", "Kamera-Winkel", settings.cameraAngle, 0, 60, 1, "°")}
-        ${field("fov", "FOV", settings.fov, 60, 130, 1, "°")}
-        ${field("gateSize", "Gate-Größe", settings.gateSize, 0.75, 3, 0.05, "×")}
-        <label class="settings-check"><span>Stick Visualizer</span><input name="showStickVisualizer" type="checkbox" ${settings.showStickVisualizer ? "checked" : ""}></label>
+        ${field("resolutionScale", "Auflösung", settings.resolutionScale * 100, 50, 100, 10, "%")}
+        <label><span>Detailstufe</span><select name="detailLevel"><option value="low" ${settings.detailLevel === "low" ? "selected" : ""}>Niedrig</option><option value="medium" ${settings.detailLevel === "medium" ? "selected" : ""}>Mittel</option><option value="high" ${settings.detailLevel === "high" ? "selected" : ""}>Hoch</option></select></label>
       </div>
       <footer><button class="primary" type="button" data-close>FERTIG</button></footer>
     </form>`;
@@ -31,11 +28,8 @@ export class SettingsPanel {
       const number = (name: string) => Number(data.get(name));
       settings = {
         ...settings,
-        deadband: number("deadband"),
-        cameraAngle: number("cameraAngle"),
-        fov: number("fov"),
-        gateSize: number("gateSize"),
-        showStickVisualizer: data.has("showStickVisualizer"),
+        resolutionScale: number("resolutionScale") / 100,
+        detailLevel: data.get("detailLevel") as AppSettings["detailLevel"],
       };
       this.element
         .querySelectorAll<HTMLInputElement>('input[type="range"]')

@@ -1,6 +1,5 @@
 import "./style.css";
 import { FixedTimestep } from "./core/FixedTimestep";
-import { ControllerInspector } from "./input/ControllerInspector";
 import { CalibrationWizard } from "./input/CalibrationWizard";
 import { GamepadInput } from "./input/GamepadInput";
 import { GamepadManager } from "./input/GamepadManager";
@@ -34,8 +33,6 @@ import {
 async function start(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>("#simulator");
   if (!canvas) throw new Error("Simulator canvas is missing");
-  const inspectorElement = document.querySelector<HTMLElement>("#controllers");
-  if (!inspectorElement) throw new Error("Controller inspector is missing");
 
   const view = new Scene(canvas);
   const gamepadManager = new GamepadManager();
@@ -43,8 +40,6 @@ async function start(): Promise<void> {
   const gamepadInput = new GamepadInput(gamepadManager, inputConfiguration);
   let settings = loadAppSettings();
   gamepadInput.setDeadband(settings.deadband);
-  const controllerInspector = new ControllerInspector(inspectorElement);
-  gamepadManager.subscribe((gamepads) => controllerInspector.render(gamepads));
   const wizardElement = document.querySelector<HTMLElement>("#calibration");
   if (!wizardElement) throw new Error("Calibration wizard is missing");
   const wizard = new CalibrationWizard(
@@ -54,7 +49,7 @@ async function start(): Promise<void> {
     inputConfiguration,
   );
   document
-    .querySelector("#calibrate")
+    .querySelector("#menu-calibrate")
     ?.addEventListener("click", () => wizard.open());
   let tuning = loadDroneTuning();
   const { world, drone, gateSensors, setGateSize } =
@@ -95,16 +90,17 @@ async function start(): Promise<void> {
     view.setFpvSettings(next.cameraAngle, next.fov);
     view.setGateSize(next.gateSize);
     setGateSize(next.gateSize);
+    view.setGraphics(next.resolutionScale, next.detailLevel);
     stickVisualizer?.toggleAttribute("hidden", !next.showStickVisualizer);
     saveAppSettings(next);
   };
   const settingsPanel = new SettingsPanel(settingsElement, applySettings);
   document
-    .querySelector("#open-settings")
+    .querySelector("#menu-open-settings")
     ?.addEventListener("click", () => settingsPanel.open(settings));
   applySettings(settings);
   document
-    .querySelector("#open-tuning")
+    .querySelector("#menu-open-tuning")
     ?.addEventListener("click", () => tuningPanel.open(tuning));
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
@@ -132,13 +128,6 @@ async function start(): Promise<void> {
     else if (mode === "race") view.setExpectedGate(0);
     else view.clearExpectedGate();
   };
-  document
-    .querySelectorAll<HTMLElement>("[data-mode]")
-    .forEach((button) =>
-      button.addEventListener("click", () =>
-        setMode(button.dataset.mode as FlightMode),
-      ),
-    );
   const reset = (): void => {
     if (mode === "first-gates") lesson.recordCrash();
     drone.reset();
@@ -152,15 +141,54 @@ async function start(): Promise<void> {
       view.setExpectedGate(FIRST_GATES[lesson.state.stepIndex]);
     else if (mode === "free-flight") view.clearExpectedGate();
   };
-  const debugReadout = document.querySelector<HTMLElement>("#flight-debug");
   document.querySelector("#reset")?.addEventListener("click", reset);
   const toggleCamera = (): void => {
     const fpvActive = view.toggleCamera();
     if (cameraMode) cameraMode.textContent = fpvActive ? "FPV" : "DEBUG";
     crosshair?.toggleAttribute("hidden", !fpvActive);
   };
+  const menu = document.querySelector<HTMLElement>("#main-menu")!;
+  const showMenuPage = (page: string): void => {
+    menu.querySelectorAll<HTMLElement>(".menu-page").forEach((element) => {
+      element.hidden = element.id !== `menu-${page}`;
+    });
+  };
+  const openMenu = (): void => {
+    document
+      .querySelectorAll<HTMLElement>(".wizard-layer")
+      .forEach((layer) => (layer.hidden = true));
+    menu.hidden = false;
+    document.body.classList.add("menu-open");
+    showMenuPage("home");
+  };
+  const closeMenu = (): void => {
+    menu.hidden = true;
+    document.body.classList.remove("menu-open");
+  };
+  menu
+    .querySelectorAll<HTMLElement>("[data-menu]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        showMenuPage(button.dataset.menu!),
+      ),
+    );
+  document.querySelector("#start-flight")?.addEventListener("click", () => {
+    const selected = document.querySelector<HTMLInputElement>(
+      'input[name="flight-mode"]:checked',
+    )?.value as FlightMode | undefined;
+    setMode(selected ?? "free-flight");
+    reset();
+    closeMenu();
+  });
+  openMenu();
   addEventListener("keydown", ({ code, repeat }) => {
     if (repeat) return;
+    if (code === "Escape") {
+      if (menu.hidden) openMenu();
+      else showMenuPage("home");
+      return;
+    }
+    if (!menu.hidden) return;
     if (code === "KeyC") toggleCamera();
     if (code === "KeyR") reset();
   });
@@ -259,12 +287,6 @@ async function start(): Promise<void> {
     };
     moveStick("#left-stick", controls.yaw, controls.throttle * 2 - 1);
     moveStick("#right-stick", controls.roll, controls.pitch);
-    if (debugReadout) {
-      const debug = flightController.getDebug();
-      const row = (value: { x: number; y: number; z: number }): string =>
-        `${value.z.toFixed(2)} / ${value.x.toFixed(2)} / ${value.y.toFixed(2)}`;
-      debugReadout.innerHTML = `<dt>MODE</dt><dd>${debug.mode}</dd><dt>DESIRED °/s</dt><dd>${row(debug.desiredRates).replace(/-?\d+\.\d+/g, (number) => ((Number(number) * 180) / Math.PI).toFixed(0))}</dd><dt>ACTUAL °/s</dt><dd>${row(debug.actualRates).replace(/-?\d+\.\d+/g, (number) => ((Number(number) * 180) / Math.PI).toFixed(0))}</dd><dt>TORQUE Nm</dt><dd>${row(debug.torque)}</dd>`;
-    }
     view.render();
     requestAnimationFrame(frame);
   };
