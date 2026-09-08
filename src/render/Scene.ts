@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import { TrainingHallView } from "./TrainingHallView";
+import { ClassroomView } from "./ClassroomView";
+
+export type FlightEnvironment = "training-hall" | "classroom";
 
 export class Scene {
   readonly scene = new THREE.Scene();
@@ -8,6 +11,9 @@ export class Scene {
   private readonly debugCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
   private readonly renderer: THREE.WebGLRenderer;
   private readonly hall: TrainingHallView;
+  private readonly classroom: ClassroomView;
+  private readonly hallGroup = new THREE.Group();
+  private readonly classroomGroup = new THREE.Group();
   private fpvActive = true;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -28,7 +34,10 @@ export class Scene {
       new THREE.HemisphereLight(0xd9f2ff, 0x293120, 1.5),
     );
 
-    this.hall = new TrainingHallView(this.scene);
+    this.hall = new TrainingHallView(this.hallGroup);
+    this.classroom = new ClassroomView(this.classroomGroup);
+    this.classroomGroup.visible = false;
+    this.scene.add(this.hallGroup, this.classroomGroup);
 
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0x171c19,
@@ -94,14 +103,26 @@ export class Scene {
 
   setExpectedGate(index: number): void {
     this.hall.setExpectedGate(index);
+    this.classroom.setExpectedGate(index);
   }
 
   clearExpectedGate(): void {
     this.hall.clearExpectedGate();
+    this.classroom.clearExpectedGate();
   }
 
   setGateSize(scale: number): void {
     this.hall.setGateSize(scale);
+    this.classroom.setGateSize(scale);
+  }
+
+  setEnvironment(environment: FlightEnvironment): void {
+    const classroomActive = environment === "classroom";
+    this.hallGroup.visible = !classroomActive;
+    this.classroomGroup.visible = classroomActive;
+    const atmosphere = classroomActive ? 0xbddde2 : 0x9eb7bd;
+    this.scene.background = new THREE.Color(atmosphere);
+    this.scene.fog = new THREE.Fog(atmosphere, 25, 80);
   }
 
   setGraphics(
