@@ -600,12 +600,13 @@ canvas {
 
 .stick-visualizer {
   position: fixed;
-  right: 1.5rem;
+  left: 50%;
   bottom: 1.5rem;
   display: flex;
   gap: 0.8rem;
   padding: 0.65rem;
   background: rgb(10 14 11 / 70%);
+  transform: translateX(-50%);
 }
 .stick-visualizer[hidden] {
   display: none;
