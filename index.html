@@ -193,44 +193,30 @@
       </main>
       <div class="flight-panels">
         <aside id="lesson" class="lesson-panel" aria-live="polite"></aside>
-        <aside id="race-panel" class="race-panel" aria-live="polite" hidden>
-          <header><small>FÜNF-GATE-KURS</small><strong>RACE</strong></header>
-          <div class="race-time" id="race-time">00:00.000</div>
-          <dl>
-            <div>
-              <dt>BESTZEIT</dt>
-              <dd id="best-time">–</dd>
+        <aside id="race-panel" class="hud" aria-label="Flug-Telemetrie">
+          <div class="hud-flight-data">
+            <div class="hud-reading">
+              <span>SPD</span>
+              <strong id="hud-speed">0</strong>
+              <small>KM/H</small>
             </div>
-            <div>
-              <dt>RUNDEN</dt>
-              <dd id="race-laps">0</dd>
+            <div class="hud-reading">
+              <span>ALT</span>
+              <strong id="hud-altitude">0.0</strong>
+              <small>M</small>
             </div>
-          </dl>
-        </aside>
-        <aside class="hud">
-          <header>
-            <strong>SAND<span>FPV</span></strong
-            ><b id="camera-mode">FPV</b>
-          </header>
-          <dl class="telemetry">
-            <dt>THR</dt>
-            <dd id="motor-state">0%</dd>
-            <dt>FPS</dt>
-            <dd id="fps">--</dd>
-            <dt>WINKEL</dt>
-            <dd id="camera-angle">20°</dd>
-            <dt>GATE</dt>
-            <dd id="gate-state">1 / 5</dd>
-            <dt>RUNDEN</dt>
-            <dd id="lap-state">0</dd>
-            <dt>ROLL</dt>
-            <dd id="hud-roll">+0.00</dd>
-            <dt>PITCH</dt>
-            <dd id="hud-pitch">+0.00</dd>
-            <dt>YAW</dt>
-            <dd id="hud-yaw">+0.00</dd>
-          </dl>
-          <small>↑ / ↓: WINKEL · C: KAMERA · R: RESET</small>
+          </div>
+          <div class="hud-lap-times" aria-live="polite">
+            <div class="hud-current-time" id="race-time">00:00.000</div>
+            <div class="hud-last-time">
+              <span>LETZTE RUNDE</span>
+              <strong id="last-time">–</strong>
+            </div>
+          </div>
+          <div class="hud-best-time">
+            <span>BESTE RUNDE</span>
+            <strong id="best-time">–</strong>
+          </div>
         </aside>
       </div>
       <aside

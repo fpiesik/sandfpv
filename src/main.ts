@@ -109,7 +109,6 @@ async function start(): Promise<void> {
     document.querySelector<HTMLElement>("#camera-angle");
   const crosshair = document.querySelector<HTMLElement>("#crosshair");
   const lessonContainer = document.querySelector<HTMLElement>("#lesson")!;
-  const racePanel = document.querySelector<HTMLElement>("#race-panel")!;
   let mode: FlightMode = settings.mode;
   const setMode = (nextMode: FlightMode): void => {
     mode = nextMode;
@@ -120,7 +119,6 @@ async function start(): Promise<void> {
     raceCourse.reset();
     lapTimer.reset();
     lessonContainer.hidden = mode !== "first-gates";
-    racePanel.hidden = mode !== "race";
     document
       .querySelectorAll<HTMLElement>("[data-mode]")
       .forEach((button) =>
@@ -283,14 +281,19 @@ async function start(): Promise<void> {
       formatRaceTime(lapTimer.elapsedSeconds);
     document.querySelector<HTMLElement>("#best-time")!.textContent =
       formatRaceTime(lapTimer.best);
-    document.querySelector<HTMLElement>("#race-laps")!.textContent = String(
-      raceCourse.laps,
-    );
+    document.querySelector<HTMLElement>("#last-time")!.textContent =
+      formatRaceTime(lapTimer.last);
     smoothedFps +=
       (1000 / Math.max(1, time - previousTime) - smoothedFps) * 0.08;
     previousTime = time;
 
     const position = drone.body.translation();
+    const velocity = drone.body.linvel();
+    document.querySelector<HTMLElement>("#hud-speed")!.textContent = (
+      Math.hypot(velocity.x, velocity.y, velocity.z) * 3.6
+    ).toFixed(0);
+    document.querySelector<HTMLElement>("#hud-altitude")!.textContent =
+      Math.max(0, position.y).toFixed(1);
     const rotation = drone.body.rotation();
     view.drone.position.set(position.x, position.y, position.z);
     view.drone.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
