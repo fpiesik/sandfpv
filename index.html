@@ -112,7 +112,12 @@
                 <fieldset>
                   <legend>TRACK</legend>
                   <label class="option-card"
-                    ><input type="radio" name="track" checked /><span
+                    ><input
+                      type="radio"
+                      name="track"
+                      value="five-gates"
+                      checked
+                    /><span
                       ><b>FIVE GATES</b
                       ><small>5 Gates · Einsteiger</small></span
                     ><i>01</i></label
@@ -213,9 +218,16 @@
               <strong id="last-time">–</strong>
             </div>
           </div>
-          <div class="hud-best-time">
-            <span>BESTE RUNDE</span>
-            <strong id="best-time">–</strong>
+          <div class="hud-best-times">
+            <div class="hud-best-time">
+              <span>SESSION BEST</span>
+              <strong id="session-best-time">–</strong>
+            </div>
+            <div class="hud-best-time">
+              <span>ALL-TIME BEST</span>
+              <strong id="best-time">–</strong>
+              <button id="reset-best-time" type="button">ZURÜCKSETZEN</button>
+            </div>
           </div>
         </aside>
       </div>

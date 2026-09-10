@@ -462,7 +462,7 @@ canvas {
   line-height: 0.85;
 }
 .hud-reading small {
-  font-size: clamp(0.65rem, 1.2vw, 1.25rem);
+  font-size: clamp(1rem, 2.2vw, 2.2rem);
   text-align: right;
 }
 .hud-lap-times {
@@ -483,6 +483,11 @@ canvas {
 .hud-best-time strong {
   font: inherit;
 }
+.hud-best-times {
+  display: grid;
+  justify-items: end;
+  gap: clamp(0.8rem, 2vh, 1.5rem);
+}
 .hud-best-time {
   display: grid;
   justify-items: end;
@@ -491,6 +496,25 @@ canvas {
 }
 .hud-best-time strong {
   font-size: clamp(1.35rem, 2.8vw, 2.8rem);
+}
+.hud-best-time button {
+  pointer-events: auto;
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 1px solid currentcolor;
+  color: #fff;
+  background: transparent;
+  font:
+    700 clamp(0.5rem, 0.7vw, 0.7rem) ui-monospace,
+    monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.hud-best-time button:hover,
+.hud-best-time button:focus-visible {
+  color: #ffb000;
+  opacity: 1;
 }
 .lesson-panel header {
   display: flex;

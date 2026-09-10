@@ -177,12 +177,22 @@ async function start(): Promise<void> {
       'input[name="environment"]:checked',
     )?.value as FlightEnvironment | undefined;
     view.setEnvironment(environment ?? "training-hall");
+    const track = document.querySelector<HTMLInputElement>(
+      'input[name="track"]:checked',
+    )?.value;
+    lapTimer.startSession(
+      environment ?? "training-hall",
+      track ?? "five-gates",
+    );
     const selected = document.querySelector<HTMLInputElement>(
       'input[name="flight-mode"]:checked',
     )?.value as FlightMode | undefined;
     setMode(selected ?? "free-flight");
     reset();
     closeMenu();
+  });
+  document.querySelector("#reset-best-time")?.addEventListener("click", () => {
+    lapTimer.clearAllTimeBest();
   });
   openMenu();
   const setCameraAngle = (cameraAngle: number): void => {
@@ -281,6 +291,8 @@ async function start(): Promise<void> {
       formatRaceTime(lapTimer.elapsedSeconds);
     document.querySelector<HTMLElement>("#best-time")!.textContent =
       formatRaceTime(lapTimer.best);
+    document.querySelector<HTMLElement>("#session-best-time")!.textContent =
+      formatRaceTime(lapTimer.sessionBest);
     document.querySelector<HTMLElement>("#last-time")!.textContent =
       formatRaceTime(lapTimer.last);
     smoothedFps +=
