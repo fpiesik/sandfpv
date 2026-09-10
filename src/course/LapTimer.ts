@@ -8,6 +8,7 @@ export class LapTimer {
   private startedAt?: number;
   private currentSeconds = 0;
   private bestSeconds?: number;
+  private lastSeconds?: number;
 
   constructor(private readonly storage: Storage = localStorage) {
     try {
@@ -31,6 +32,9 @@ export class LapTimer {
   get best(): number | undefined {
     return this.bestSeconds;
   }
+  get last(): number | undefined {
+    return this.lastSeconds;
+  }
   get running(): boolean {
     return this.startedAt !== undefined;
   }
@@ -47,6 +51,7 @@ export class LapTimer {
     if (this.startedAt === undefined) return undefined;
     this.update(nowSeconds);
     this.startedAt = undefined;
+    this.lastSeconds = this.currentSeconds;
     if (
       this.bestSeconds === undefined ||
       this.currentSeconds < this.bestSeconds
@@ -63,5 +68,6 @@ export class LapTimer {
   reset(): void {
     this.startedAt = undefined;
     this.currentSeconds = 0;
+    this.lastSeconds = undefined;
   }
 }

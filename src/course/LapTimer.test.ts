@@ -32,10 +32,22 @@ describe("LapTimer", () => {
     timer.start(30);
     timer.finish(45);
     expect(timer.best).toBe(12.5);
+    expect(timer.last).toBe(15);
     expect(JSON.parse(storage.getItem(BEST_LAP_STORAGE_KEY)!)).toEqual({
       version: 1,
       bestSeconds: 12.5,
     });
     expect(new LapTimer(storage).best).toBe(12.5);
+  });
+
+  it("clears the current and last lap when reset", () => {
+    const timer = new LapTimer(new MemoryStorage());
+    timer.start(2);
+    timer.finish(7);
+    timer.reset();
+
+    expect(timer.elapsedSeconds).toBe(0);
+    expect(timer.last).toBeUndefined();
+    expect(timer.best).toBe(5);
   });
 });
