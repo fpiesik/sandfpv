@@ -80,16 +80,6 @@ async function start(): Promise<void> {
     drone.applyConfig(next);
     saveDroneTuning(next);
   });
-  const debugPanel = document.querySelector<HTMLElement>("#physics-debug")!;
-  const debugToggle =
-    document.querySelector<HTMLButtonElement>("#debug-toggle")!;
-  debugToggle.addEventListener("click", () => {
-    debugPanel.hidden = !debugPanel.hidden;
-    debugToggle.setAttribute("aria-expanded", String(!debugPanel.hidden));
-  });
-  document
-    .querySelector("#debug-tuning")
-    ?.addEventListener("click", () => tuningPanel.open(tuning));
   const settingsElement = document.querySelector<HTMLElement>("#settings");
   if (!settingsElement) throw new Error("Settings panel is missing");
   const stickVisualizer =
@@ -233,9 +223,7 @@ async function start(): Promise<void> {
     if (code === "KeyC") toggleCamera();
     if (code === "KeyR") reset();
   });
-  // 240 Hz keeps the very low-inertia rate loop and motor mixer stable while
-  // remaining completely independent of render cadence.
-  const physicsLoop = new FixedTimestep(240);
+  const physicsLoop = new FixedTimestep(120);
   let previousTime = performance.now();
   let smoothedFps = 60;
   let cameraButtonPressed = false;
@@ -254,6 +242,7 @@ async function start(): Promise<void> {
     if (cameraButtonNow && !cameraButtonPressed) toggleCamera();
     cameraButtonPressed = cameraButtonNow;
     physicsLoop.advance((time - previousTime) / 1000, (stepSeconds) => {
+      drone.applyThrottle(controls.throttle, stepSeconds);
       flightController.update(controls, stepSeconds);
       world.timestep = stepSeconds;
       const velocity = drone.body.linvel();
@@ -323,21 +312,6 @@ async function start(): Promise<void> {
     if (motorReadout)
       motorReadout.textContent = `${Math.round(drone.currentMotorThrottle * 100)}%`;
     if (fpsReadout) fpsReadout.textContent = smoothedFps.toFixed(0);
-    if (!debugPanel.hidden) {
-      const telemetry = drone.telemetry;
-      const controller = flightController.getDebug();
-      const rates = (v: { x: number; y: number; z: number }) =>
-        `${v.z.toFixed(1)} / ${v.x.toFixed(1)} / ${v.y.toFixed(1)}`;
-      document.querySelector<HTMLElement>("#debug-values")!.textContent =
-        `Gas       ${(controls.throttle * 100).toFixed(0)} %\n` +
-        `Motoren   ${telemetry.motorCommands.map((v) => (v * 100).toFixed(0)).join(" · ")} %\n` +
-        `Schub     ${telemetry.totalThrust.toFixed(3)} N\n` +
-        `Tempo     ${Math.hypot(velocity.x, velocity.y, velocity.z).toFixed(2)} m/s\n` +
-        `Rate Soll ${rates(controller.desiredRates)} rad/s\n` +
-        `Rate Ist  ${rates(controller.actualRates)} rad/s\n` +
-        `Akku      ${telemetry.batteryVoltage.toFixed(2)} V · ${(telemetry.stateOfCharge * 100).toFixed(0)} %\n` +
-        `Mixer     ${controller.saturated ? "SÄTTIGUNG" : "Reserve"}`;
-    }
     const signed = (value: number): string =>
       `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
     for (const [name, value] of Object.entries(controls)) {

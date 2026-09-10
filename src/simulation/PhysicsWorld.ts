@@ -1,6 +1,5 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Drone, type DroneConfig } from "./Drone";
-import { AIR65_II_FREESTYLE_CONFIG } from "./Air65Profile";
 import { createTrainingHallColliders } from "./TrainingHallColliders";
 
 export async function createPhysicsWorld(config?: DroneConfig): Promise<{
@@ -13,10 +12,5 @@ export async function createPhysicsWorld(config?: DroneConfig): Promise<{
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   const { gateSensors, setGateSize } = createTrainingHallColliders(world);
 
-  return {
-    world,
-    drone: new Drone(world, config ?? AIR65_II_FREESTYLE_CONFIG),
-    gateSensors,
-    setGateSize,
-  };
+  return { world, drone: new Drone(world, config), gateSensors, setGateSize };
 }

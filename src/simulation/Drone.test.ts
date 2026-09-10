@@ -1,10 +1,8 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { beforeAll, describe, expect, it } from "vitest";
 import { Drone, type DroneConfig } from "./Drone";
-import { AIR65_II_FREESTYLE_CONFIG } from "./Air65Profile";
 
 const TEST_CONFIG: DroneConfig = {
-  ...AIR65_II_FREESTYLE_CONFIG,
   mass: 0.025,
   maxThrust: 1,
   thrustExponent: 2,
@@ -18,7 +16,7 @@ const TEST_CONFIG: DroneConfig = {
   rateExpo: 0.5,
   ratePid: { kp: 0.001, ki: 0, kd: 0 },
   integralLimit: 1,
-  mixerAuthority: 0.3,
+  maxTorque: 0.01,
 };
 
 beforeAll(async () => RAPIER.init());
@@ -60,11 +58,7 @@ describe("Drone", () => {
       world.step();
     }
 
-    expect(drone.body.userForce().y).toBeCloseTo(
-      drone.telemetry.totalThrust,
-      6,
-    );
-    expect(drone.body.userForce().y).toBeLessThan(0.002);
+    expect(drone.body.userForce().y).toBeCloseTo(0.00004, 5);
     expect(drone.body.linvel().y).toBeLessThan(0);
 
     for (let step = 0; step < 120; step += 1) {
@@ -81,11 +75,8 @@ describe("Drone", () => {
     const drone = new Drone(world, TEST_CONFIG);
     drone.applyThrottle(1, 0.1);
     expect(drone.currentMotorThrottle).toBeCloseTo(1 - Math.exp(-1));
-    expect(drone.body.userForce().y).toBeCloseTo(
-      drone.telemetry.totalThrust,
-      6,
-    );
-    expect(drone.telemetry.totalThrust).toBeGreaterThan(0.3);
+    const expectedThrust = drone.currentMotorThrottle ** 2;
+    expect(drone.body.userForce().y).toBeCloseTo(expectedThrust);
 
     const beforeCut = drone.currentMotorThrottle;
     drone.applyThrottle(0, 0.02);

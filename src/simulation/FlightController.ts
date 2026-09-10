@@ -6,8 +6,7 @@ export interface FlightControllerDebug {
   readonly mode: "ACRO";
   readonly desiredRates: RAPIER.Vector;
   readonly actualRates: RAPIER.Vector;
-  readonly correction: RAPIER.Vector;
-  readonly saturated: boolean;
+  readonly torque: RAPIER.Vector;
 }
 
 /** Maps a normalized stick to a rate in rad/s using a conventional cubic expo. */
@@ -31,8 +30,7 @@ export class FlightController {
     mode: "ACRO",
     desiredRates: vector(),
     actualRates: vector(),
-    correction: vector(),
-    saturated: false,
+    torque: vector(),
   };
 
   constructor(private readonly drone: Drone) {}
@@ -52,48 +50,31 @@ export class FlightController {
       desired.y - actual.y,
       desired.z - actual.z,
     );
-    const correction = vector();
+    for (const axis of ["x", "y", "z"] as const) {
+      this.integral[axis] = clamp(
+        this.integral[axis] + error[axis] * stepSeconds,
+        config.integralLimit,
+      );
+    }
+    const localTorque = vector();
     for (const axis of ["x", "y", "z"] as const) {
       const derivative = (error[axis] - this.previousError[axis]) / stepSeconds;
-      correction[axis] = clamp(
+      localTorque[axis] = clamp(
         config.ratePid.kp * error[axis] +
           config.ratePid.ki * this.integral[axis] +
           config.ratePid.kd * derivative,
-        config.mixerAuthority,
+        config.maxTorque,
       );
     }
     this.previousError = error;
-    // X configuration. Roll/pitch/yaw corrections compete for the finite
-    // [0,1] motor range, just as they do in an FC mixer.
-    const pitch = correction.x;
-    const yaw = correction.y;
-    const roll = correction.z;
-    const raw = [
-      controls.throttle - pitch - roll + yaw,
-      controls.throttle - pitch + roll - yaw,
-      controls.throttle + pitch + roll + yaw,
-      controls.throttle + pitch - roll - yaw,
-    ];
-    const saturated = raw.some((value) => value < 0 || value > 1);
-    // Conditional integration is simple anti-windup: do not accumulate while
-    // the requested correction cannot be represented by the motor mixer.
-    if (!saturated) {
-      for (const axis of ["x", "y", "z"] as const)
-        this.integral[axis] = clamp(
-          this.integral[axis] + error[axis] * stepSeconds,
-          config.integralLimit,
-        );
-    } else {
-      for (const axis of ["x", "y", "z"] as const)
-        this.integral[axis] *= Math.exp(-stepSeconds * 8);
-    }
-    this.drone.stepMotorCommands(raw, stepSeconds);
+    // Like forces, Rapier's user torques persist until explicitly cleared.
+    this.drone.body.resetTorques(false);
+    this.drone.body.addTorque(rotate(rotation, localTorque), true);
     this.debug = {
       mode: "ACRO",
       desiredRates: desired,
       actualRates: actual,
-      correction,
-      saturated,
+      torque: localTorque,
     };
   }
 
@@ -111,18 +92,18 @@ function clamp(value: number, limit: number): number {
   return Math.min(limit, Math.max(-limit, value));
 }
 
-function inverseRotate(q: RAPIER.Rotation, v: RAPIER.Vector): RAPIER.Vector {
-  const qx = -q.x,
-    qy = -q.y,
-    qz = -q.z,
-    qw = q.w;
-  const ix = qw * v.x + qy * v.z - qz * v.y;
-  const iy = qw * v.y + qz * v.x - qx * v.z;
-  const iz = qw * v.z + qx * v.y - qy * v.x;
-  const iw = -qx * v.x - qy * v.y - qz * v.z;
+function rotate(q: RAPIER.Rotation, v: RAPIER.Vector): RAPIER.Vector {
+  const ix = q.w * v.x + q.y * v.z - q.z * v.y;
+  const iy = q.w * v.y + q.z * v.x - q.x * v.z;
+  const iz = q.w * v.z + q.x * v.y - q.y * v.x;
+  const iw = -q.x * v.x - q.y * v.y - q.z * v.z;
   return {
-    x: ix * qw + iw * -qx + iy * -qz - iz * -qy,
-    y: iy * qw + iw * -qy + iz * -qx - ix * -qz,
-    z: iz * qw + iw * -qz + ix * -qy - iy * -qx,
+    x: ix * q.w + iw * -q.x + iy * -q.z - iz * -q.y,
+    y: iy * q.w + iw * -q.y + iz * -q.x - ix * -q.z,
+    z: iz * q.w + iw * -q.z + ix * -q.y - iy * -q.x,
   };
+}
+
+function inverseRotate(q: RAPIER.Rotation, v: RAPIER.Vector): RAPIER.Vector {
+  return rotate({ x: -q.x, y: -q.y, z: -q.z, w: q.w }, v);
 }
