@@ -242,6 +242,16 @@
         </div>
       </aside>
       <button id="reset" class="reset-button">DROHNE RESETTEN</button>
+      <button id="debug-toggle" class="debug-toggle" aria-expanded="false">
+        PHYSIK DEBUG
+      </button>
+      <aside id="physics-debug" class="physics-debug" hidden aria-live="polite">
+        <header>
+          <strong>AIR65 II · PHYSIK</strong
+          ><button id="debug-tuning">TUNING</button>
+        </header>
+        <pre id="debug-values"></pre>
+      </aside>
       <div id="calibration" class="wizard-layer" hidden></div>
       <div id="tuning" class="wizard-layer" hidden></div>
       <div id="settings" class="wizard-layer" hidden></div>

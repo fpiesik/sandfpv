@@ -20,7 +20,7 @@ export const APP_SETTINGS_STORAGE_KEY = "sandfpv.settings";
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   mode: "first-gates",
   deadband: 0.03,
-  cameraAngle: 20,
+  cameraAngle: 25,
   fov: 95,
   gateSize: 1.5,
   showStickVisualizer: true,

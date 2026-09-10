@@ -1,4 +1,5 @@
-import { AIR65_II_FREESTYLE_CONFIG, type DroneConfig } from "./Drone";
+import type { DroneConfig } from "./Drone";
+import { AIR65_II_FREESTYLE_CONFIG } from "./Air65Profile";
 
 export const DRONE_TUNING_STORAGE_KEY = "sandfpv.drone-tuning.v2";
 
@@ -15,7 +16,11 @@ export type DroneTuning = Pick<
   | "motorSpoolDownTime"
   | "rateExpo"
   | "integralLimit"
-  | "maxTorque"
+  | "mixerAuthority"
+  | "motorIdle"
+  | "motorArm"
+  | "yawTorqueCoefficient"
+  | "battery"
 > & {
   maxRates: DroneConfig["maxRates"];
   ratePid: DroneConfig["ratePid"];
@@ -28,6 +33,7 @@ export function cloneDefaultTuning(): DroneTuning {
     ratePid: { ...AIR65_II_FREESTYLE_CONFIG.ratePid },
     bodyDrag: { ...AIR65_II_FREESTYLE_CONFIG.bodyDrag },
     inertia: { ...AIR65_II_FREESTYLE_CONFIG.inertia },
+    battery: { ...AIR65_II_FREESTYLE_CONFIG.battery },
   };
 }
 
@@ -45,6 +51,7 @@ export function loadDroneTuning(storage: Storage = localStorage): DroneTuning {
       ratePid: { ...defaults.ratePid, ...saved.ratePid },
       bodyDrag: { ...defaults.bodyDrag, ...saved.bodyDrag },
       inertia: { ...defaults.inertia, ...saved.inertia },
+      battery: { ...defaults.battery, ...saved.battery },
     };
   } catch {
     return defaults;
@@ -82,6 +89,7 @@ export class DroneTuningPanel {
           ${this.field("thrustExponent", "Schub-Exponent", tuning.thrustExponent, 1, 2.5, 0.01, "")}
           ${this.field("motorSpoolUpTime", "Spool-up", tuning.motorSpoolUpTime * 1000, 10, 150, 1, "ms")}
           ${this.field("motorSpoolDownTime", "Spool-down", tuning.motorSpoolDownTime * 1000, 5, 100, 1, "ms")}
+          ${this.field("motorIdle", "Motor Idle", tuning.motorIdle * 100, 0, 15, 0.5, "%")}
           ${this.field("bodyDragX", "Körper-Drag X", tuning.bodyDrag.x, 0, 0.1, 0.001, "")}
           ${this.field("bodyDragY", "Körper-Drag Y", tuning.bodyDrag.y, 0, 0.1, 0.001, "")}
           ${this.field("bodyDragZ", "Körper-Drag Z", tuning.bodyDrag.z, 0, 0.1, 0.001, "")}
@@ -91,9 +99,9 @@ export class DroneTuningPanel {
           ${this.field("rollRate", "Roll Rate", tuning.maxRates.roll, 1, 25, 0.1, "rad/s")}
           ${this.field("pitchRate", "Pitch Rate", tuning.maxRates.pitch, 1, 25, 0.1, "rad/s")}
           ${this.field("yawRate", "Yaw Rate", tuning.maxRates.yaw, 1, 20, 0.1, "rad/s")}
-          ${this.field("kp", "PID · P", tuning.ratePid.kp, 0, 0.001, 0.00001, "")}
-          ${this.field("ki", "PID · I", tuning.ratePid.ki, 0, 0.0002, 0.000005, "")}
-          ${this.field("kd", "PID · D", tuning.ratePid.kd, 0, 0.00002, 0.000001, "")}
+          ${this.field("kp", "Rate · P", tuning.ratePid.kp, 0, 0.2, 0.005, "")}
+          ${this.field("ki", "Rate · I", tuning.ratePid.ki, 0, 1.5, 0.05, "")}
+          ${this.field("kd", "Rate · D", tuning.ratePid.kd, 0, 0.005, 0.0001, "")}
         </div>
         <footer><button type="button" data-defaults>WERKSEINSTELLUNG</button><button class="primary" type="button" data-close>FERTIG</button></footer>
       </form>`;
@@ -133,6 +141,7 @@ export class DroneTuningPanel {
           pitch: number("pitchRate"),
           yaw: number("yawRate"),
         },
+        motorIdle: number("motorIdle") / 100,
         ratePid: { kp: number("kp"), ki: number("ki"), kd: number("kd") },
       };
       tuning = next;
