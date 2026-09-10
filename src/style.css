@@ -21,6 +21,57 @@ canvas {
   width: 100%;
   height: 100%;
 }
+.debug-toggle {
+  position: fixed;
+  z-index: 5;
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #ffb000;
+  color: #ffb000;
+  background: #111b;
+  font:
+    0.65rem ui-monospace,
+    monospace;
+  cursor: pointer;
+}
+.physics-debug {
+  position: fixed;
+  z-index: 5;
+  right: 1rem;
+  bottom: 4.25rem;
+  width: min(25rem, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid rgb(255 176 0 / 55%);
+  background: rgb(8 13 10 / 92%);
+  backdrop-filter: blur(10px);
+}
+.physics-debug[hidden] {
+  display: none;
+}
+.physics-debug header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffb000;
+  font:
+    0.7rem ui-monospace,
+    monospace;
+}
+.physics-debug button {
+  border: 1px solid #ffb000;
+  color: #101511;
+  background: #ffb000;
+  font-weight: 800;
+  cursor: pointer;
+}
+.physics-debug pre {
+  margin: 0.8rem 0 0;
+  color: #d8e2da;
+  font:
+    0.72rem/1.65 ui-monospace,
+    monospace;
+}
 
 .main-menu {
   position: fixed;

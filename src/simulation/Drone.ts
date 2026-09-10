@@ -1,32 +1,35 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 
 export interface DroneConfig {
-  /** All-up mass in kilograms. */
   readonly mass: number;
-  /** Combined thrust of all four motors in newtons. */
   readonly maxThrust: number;
-  /** Exponent of the normalized motor/propeller thrust curve. */
   readonly thrustExponent: number;
-  /** Quadratic body drag per local axis, in N/(m/s)^2. */
   readonly bodyDrag: {
     readonly x: number;
     readonly y: number;
     readonly z: number;
   };
-  /** Additional lateral quadratic drag at full motor speed, in N/(m/s)^2. */
   readonly rotorDrag: number;
-  /** Explicit principal moments of inertia in kg m^2 (roll, yaw, pitch axes). */
   readonly inertia: {
     readonly x: number;
     readonly y: number;
     readonly z: number;
   };
-  /** Rapier's angular velocity damping coefficient, in s^-1. */
   readonly angularDrag: number;
-  /** Time constant of the first-order motor response, in seconds. */
   readonly motorSpoolUpTime: number;
   readonly motorSpoolDownTime: number;
-  /** Maximum body rates in radians per second. */
+  readonly motorIdle: number;
+  /** X/Z distance from centre for each motor, metres. */
+  readonly motorArm: number;
+  /** Reaction torque divided by thrust, metres. */
+  readonly yawTorqueCoefficient: number;
+  readonly battery: {
+    readonly capacityAh: number;
+    readonly fullVoltage: number;
+    readonly emptyVoltage: number;
+    readonly internalResistance: number;
+    readonly recoveryTime: number;
+  };
   readonly maxRates: {
     readonly roll: number;
     readonly pitch: number;
@@ -39,50 +42,46 @@ export interface DroneConfig {
     readonly kd: number;
   };
   readonly integralLimit: number;
-  readonly maxTorque: number;
+  /** Mixer authority around collective, normalized motor command. */
+  readonly mixerAuthority: number;
 }
-
-/** A high-performance 65 mm 1S whoop at approximately 25 g AUW. */
-export const AIR65_II_FREESTYLE_CONFIG: DroneConfig = {
-  mass: 0.025,
-  // With the nonlinear curve, 10:1 peak thrust puts hover near 25% throttle.
-  maxThrust: 0.025 * 9.81 * 10,
-  thrustExponent: 1.65,
-  bodyDrag: { x: 0.018, y: 0.004, z: 0.018 },
-  rotorDrag: 0.035,
-  inertia: { x: 8.5e-6, y: 1.45e-5, z: 8.5e-6 },
-  angularDrag: 0.12,
-  motorSpoolUpTime: 0.045,
-  motorSpoolDownTime: 0.018,
-  maxRates: { roll: 12, pitch: 12, yaw: 8 },
-  rateExpo: 0.65,
-  ratePid: { kp: 0.00012, ki: 0.000025, kd: 0.000002 },
-  integralLimit: 3,
-  maxTorque: 0.003,
-};
 
 export interface DroneSpawn {
   readonly position?: RAPIER.Vector;
   readonly rotation?: RAPIER.Rotation;
 }
+export interface DroneTelemetry {
+  readonly motorCommands: readonly number[];
+  readonly motorSpeeds: readonly number[];
+  readonly motorThrusts: readonly number[];
+  readonly totalThrust: number;
+  readonly batteryVoltage: number;
+  readonly stateOfCharge: number;
+}
 
 const DEFAULT_POSITION = { x: 0, y: 0.15, z: 0 };
 const IDENTITY_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
+const MOTOR_SIGNS = [1, -1, -1, 1] as const;
 
-/** Owns the physical state and motor model of a quadcopter. */
+/** Four-motor rigid-body model. All calculations use SI units. */
 export class Drone {
   readonly body: RAPIER.RigidBody;
   readonly collider: RAPIER.Collider;
   private readonly initialPosition: RAPIER.Vector;
   private readonly initialRotation: RAPIER.Rotation;
-  private motorThrottle = 0;
+  private motorCommands = [0, 0, 0, 0];
+  private motorSpeeds = [0, 0, 0, 0];
+  private motorThrusts = [0, 0, 0, 0];
+  private stateOfCharge = 1;
+  private batteryVoltage: number;
 
   constructor(
     world: RAPIER.World,
-    readonly config: DroneConfig = AIR65_II_FREESTYLE_CONFIG,
+    readonly config: DroneConfig,
     spawn: DroneSpawn = {},
   ) {
     validateConfig(config);
+    this.batteryVoltage = config.battery.fullVoltage;
     this.initialPosition = { ...(spawn.position ?? DEFAULT_POSITION) };
     this.initialRotation = { ...(spawn.rotation ?? IDENTITY_ROTATION) };
     this.body = world.createRigidBody(
@@ -97,9 +96,8 @@ export class Drone {
         .setAngularDamping(config.angularDrag)
         .setCcdEnabled(true),
     );
-    // 65 mm wide and deliberately shallow, approximating a ducted micro quad.
     this.collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(0.0325, 0.009, 0.0325)
+      RAPIER.ColliderDesc.cuboid(0.035, 0.009, 0.035)
         .setMassProperties(
           config.mass,
           { x: 0, y: 0, z: 0 },
@@ -112,12 +110,12 @@ export class Drone {
     );
   }
 
-  /** Applies live tuning, including physical properties owned by Rapier. */
   applyConfig(config: DroneConfig): void {
     validateConfig(config);
     Object.assign(this.config, config, {
       maxRates: { ...config.maxRates },
       ratePid: { ...config.ratePid },
+      battery: { ...config.battery },
     });
     this.collider.setMassProperties(
       config.mass,
@@ -125,71 +123,129 @@ export class Drone {
       config.inertia,
       IDENTITY_ROTATION,
     );
-    this.body.setLinearDamping(0);
     this.body.setAngularDamping(config.angularDrag);
   }
 
+  /** Compatibility/readout value: mean normalized rotor speed. */
   get currentMotorThrottle(): number {
-    return this.motorThrottle;
+    return this.motorSpeeds.reduce((a, b) => a + b, 0) / 4;
+  }
+  get telemetry(): DroneTelemetry {
+    return {
+      motorCommands: [...this.motorCommands],
+      motorSpeeds: [...this.motorSpeeds],
+      motorThrusts: [...this.motorThrusts],
+      totalThrust: this.motorThrusts.reduce((a, b) => a + b, 0),
+      batteryVoltage: this.batteryVoltage,
+      stateOfCharge: this.stateOfCharge,
+    };
   }
 
-  /** Updates motor lag and applies collective thrust along the drone's local +Y. */
-  applyThrottle(throttle: number, stepSeconds: number): void {
-    const targetThrottle = Math.min(1, Math.max(0, throttle));
-    if (!Number.isFinite(stepSeconds) || stepSeconds <= 0) return;
-
-    // Rapier keeps user forces between simulation steps. Replace the previous
-    // motor force instead of accumulating thrust on every controller update.
+  /** Advances motors, battery and forces once per fixed physics step. */
+  stepMotorCommands(commands: readonly number[], stepSeconds: number): void {
+    if (
+      commands.length !== 4 ||
+      !Number.isFinite(stepSeconds) ||
+      stepSeconds <= 0
+    )
+      return;
     this.body.resetForces(false);
-    const timeConstant =
-      targetThrottle >= this.motorThrottle
-        ? this.config.motorSpoolUpTime
-        : this.config.motorSpoolDownTime;
-    const response = 1 - Math.exp(-stepSeconds / timeConstant);
-    this.motorThrottle += (targetThrottle - this.motorThrottle) * response;
-
-    const rotation = this.body.rotation();
-    const localUp = {
-      x: 2 * (rotation.x * rotation.y - rotation.w * rotation.z),
-      y: 1 - 2 * (rotation.x ** 2 + rotation.z ** 2),
-      z: 2 * (rotation.y * rotation.z + rotation.w * rotation.x),
-    };
-    const thrust =
-      this.motorThrottle ** this.config.thrustExponent * this.config.maxThrust;
-    this.body.addForce(
-      { x: localUp.x * thrust, y: localUp.y * thrust, z: localUp.z * thrust },
-      true,
+    this.body.resetTorques(false);
+    this.motorCommands = commands.map((v) => Math.min(1, Math.max(0, v)));
+    const averageLoad = this.motorCommands.reduce((a, b) => a + b * b, 0) / 4;
+    const battery = this.config.battery;
+    const openCircuit =
+      battery.emptyVoltage +
+      (battery.fullVoltage - battery.emptyVoltage) * this.stateOfCharge;
+    const estimatedCurrent = averageLoad * 14; // tuning assumption: four 0702 motors, 1S
+    const sagged = Math.max(
+      battery.emptyVoltage * 0.85,
+      openCircuit - estimatedCurrent * battery.internalResistance,
     );
-
+    const response = 1 - Math.exp(-stepSeconds / battery.recoveryTime);
+    this.batteryVoltage += (sagged - this.batteryVoltage) * response;
+    this.stateOfCharge = Math.max(
+      0,
+      this.stateOfCharge -
+        (estimatedCurrent * stepSeconds) / (battery.capacityAh * 3600),
+    );
+    const voltageFactor = Math.min(
+      1,
+      (this.batteryVoltage / battery.fullVoltage) ** 2,
+    );
+    const rotation = this.body.rotation();
+    const centre = this.body.translation();
+    const arm = this.config.motorArm;
+    const positions = [
+      { x: arm, y: 0, z: -arm },
+      { x: -arm, y: 0, z: -arm },
+      { x: -arm, y: 0, z: arm },
+      { x: arm, y: 0, z: arm },
+    ];
+    for (let index = 0; index < 4; index++) {
+      const target =
+        this.motorCommands[index] === 0
+          ? 0
+          : Math.max(this.config.motorIdle, this.motorCommands[index]);
+      const tau =
+        target >= this.motorSpeeds[index]
+          ? this.config.motorSpoolUpTime
+          : this.config.motorSpoolDownTime;
+      this.motorSpeeds[index] +=
+        (target - this.motorSpeeds[index]) * (1 - Math.exp(-stepSeconds / tau));
+      const thrust =
+        (this.config.maxThrust / 4) *
+        this.motorSpeeds[index] ** this.config.thrustExponent *
+        voltageFactor;
+      this.motorThrusts[index] = thrust;
+      const up = rotateVector({ x: 0, y: thrust, z: 0 }, rotation);
+      const offset = rotateVector(positions[index], rotation);
+      this.body.addForceAtPoint(
+        up,
+        {
+          x: centre.x + offset.x,
+          y: centre.y + offset.y,
+          z: centre.z + offset.z,
+        },
+        true,
+      );
+      const yaw = rotateVector(
+        {
+          x: 0,
+          y: MOTOR_SIGNS[index] * thrust * this.config.yawTorqueCoefficient,
+          z: 0,
+        },
+        rotation,
+      );
+      this.body.addTorque(yaw, true);
+    }
     this.applyAerodynamicDrag(rotation);
   }
 
+  /** Collective-only helper retained for deterministic model tests. */
+  applyThrottle(throttle: number, stepSeconds: number): void {
+    this.stepMotorCommands(
+      [throttle, throttle, throttle, throttle],
+      stepSeconds,
+    );
+  }
+
   private applyAerodynamicDrag(rotation: RAPIER.Rotation): void {
-    const velocity = this.body.linvel();
-    const localVelocity = rotateVector(velocity, {
+    const local = rotateVector(this.body.linvel(), {
       x: -rotation.x,
       y: -rotation.y,
       z: -rotation.z,
       w: rotation.w,
     });
-    // Propeller/duct drag acts laterally and fades with rotor speed. Keeping
-    // vertical body drag small allows realistic, rapid low-throttle descents.
-    const rotor = this.config.rotorDrag * this.motorThrottle;
-    const localForce = {
-      x:
-        -localVelocity.x *
-        Math.abs(localVelocity.x) *
-        (this.config.bodyDrag.x + rotor),
-      y: -localVelocity.y * Math.abs(localVelocity.y) * this.config.bodyDrag.y,
-      z:
-        -localVelocity.z *
-        Math.abs(localVelocity.z) *
-        (this.config.bodyDrag.z + rotor),
+    const rotor = this.config.rotorDrag * this.currentMotorThrottle;
+    const force = {
+      x: -local.x * Math.abs(local.x) * (this.config.bodyDrag.x + rotor),
+      y: -local.y * Math.abs(local.y) * this.config.bodyDrag.y,
+      z: -local.z * Math.abs(local.z) * (this.config.bodyDrag.z + rotor),
     };
-    this.body.addForce(rotateVector(localForce, rotation), true);
+    this.body.addForce(rotateVector(force, rotation), true);
   }
 
-  /** Restores the complete spawn state, including stopped motors. */
   reset(): void {
     this.body.setTranslation(this.initialPosition, true);
     this.body.setRotation(this.initialRotation, true);
@@ -197,7 +253,11 @@ export class Drone {
     this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     this.body.resetForces(true);
     this.body.resetTorques(true);
-    this.motorThrottle = 0;
+    this.motorCommands.fill(0);
+    this.motorSpeeds.fill(0);
+    this.motorThrusts.fill(0);
+    this.stateOfCharge = 1;
+    this.batteryVoltage = this.config.battery.fullVoltage;
   }
 }
 
@@ -208,33 +268,17 @@ function validateConfig(config: DroneConfig): void {
     config.thrustExponent,
     config.motorSpoolUpTime,
     config.motorSpoolDownTime,
+    config.motorArm,
+    config.yawTorqueCoefficient,
+    config.battery.capacityAh,
   ];
-  if (positive.some((value) => !Number.isFinite(value) || value <= 0))
-    throw new RangeError(
-      "Mass, thrust and motor response time must be positive",
-    );
-  if (!Number.isFinite(config.angularDrag) || config.angularDrag < 0)
-    throw new RangeError("Drag coefficients must be non-negative");
-  const tuning = [
-    ...Object.values(config.bodyDrag),
-    ...Object.values(config.inertia),
-    config.rotorDrag,
-    ...Object.values(config.maxRates),
-    ...Object.values(config.ratePid),
-    config.integralLimit,
-    config.maxTorque,
-  ];
-  if (tuning.some((value) => !Number.isFinite(value) || value < 0))
-    throw new RangeError("Flight-controller tuning must be non-negative");
-  if (
-    !Number.isFinite(config.rateExpo) ||
-    config.rateExpo < 0 ||
-    config.rateExpo > 1
-  )
-    throw new RangeError("Rate expo must be between zero and one");
+  if (positive.some((v) => !Number.isFinite(v) || v <= 0))
+    throw new RangeError("Physical parameters must be positive");
+  if (config.motorIdle < 0 || config.motorIdle >= 1)
+    throw new RangeError("Motor idle must be in [0, 1)");
 }
 
-function rotateVector(
+export function rotateVector(
   vector: RAPIER.Vector,
   rotation: RAPIER.Rotation,
 ): RAPIER.Vector {
