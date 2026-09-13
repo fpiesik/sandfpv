@@ -17,6 +17,8 @@ interface StoredSettings {
 }
 
 export const APP_SETTINGS_STORAGE_KEY = "sandfpv.settings";
+export const MIN_FOV = 60;
+export const MAX_FOV = 175;
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   mode: "first-gates",
   deadband: 0.03,
@@ -63,7 +65,7 @@ function sanitize(settings: AppSettings): AppSettings {
       60,
       DEFAULT_APP_SETTINGS.cameraAngle,
     ),
-    fov: clamp(settings.fov, 60, 130, DEFAULT_APP_SETTINGS.fov),
+    fov: clamp(settings.fov, MIN_FOV, MAX_FOV, DEFAULT_APP_SETTINGS.fov),
     gateSize: clamp(settings.gateSize, 0.75, 3, DEFAULT_APP_SETTINGS.gateSize),
     showStickVisualizer: Boolean(settings.showStickVisualizer),
     resolutionScale: clamp(
