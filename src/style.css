@@ -334,6 +334,7 @@ canvas {
 .menu-open .flight-panels,
 .menu-open .stick-visualizer,
 .menu-open .reset-button,
+.menu-open .tuning-button,
 .menu-open .crosshair {
   display: none;
 }
@@ -918,6 +919,20 @@ canvas {
   margin-top: 1.2rem;
   padding-top: 1rem;
   border-top: 1px solid rgb(255 255 255 / 10%);
+}
+.tuning-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tuning-file-status {
+  flex: 1 0 100%;
+  margin: 0;
+  color: #8f9c91;
+  font-size: 0.65rem;
+}
+.tuning-file-status[data-error] {
+  color: #ff897d;
 }
 
 .wizard-layer {
