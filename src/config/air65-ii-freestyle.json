@@ -1,0 +1,32 @@
+{
+  "mass": 0.025,
+  "maxThrust": 2.4525,
+  "thrustExponent": 1.65,
+  "bodyDrag": {
+    "x": 0.018,
+    "y": 0.004,
+    "z": 0.018
+  },
+  "rotorDrag": 0.035,
+  "inertia": {
+    "x": 0.0000085,
+    "y": 0.0000145,
+    "z": 0.0000085
+  },
+  "angularDrag": 0.12,
+  "motorSpoolUpTime": 0.045,
+  "motorSpoolDownTime": 0.018,
+  "maxRates": {
+    "roll": 12,
+    "pitch": 12,
+    "yaw": 8
+  },
+  "rateExpo": 0.65,
+  "ratePid": {
+    "kp": 0.00012,
+    "ki": 0.000025,
+    "kd": 0.000002
+  },
+  "integralLimit": 3,
+  "maxTorque": 0.003
+}

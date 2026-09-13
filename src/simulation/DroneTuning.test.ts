@@ -4,6 +4,8 @@ import {
   cloneDefaultTuning,
   loadDroneTuning,
   saveDroneTuning,
+  parseDroneTuning,
+  serializeDroneTuning,
   hoverThrottle,
 } from "./DroneTuning";
 
@@ -51,6 +53,18 @@ describe("drone tuning persistence", () => {
     saveDroneTuning(tuning, storage);
 
     expect(loadDroneTuning(storage)).toEqual(tuning);
+  });
+
+  it("round-trips a tuning configuration file", () => {
+    const tuning = { ...cloneDefaultTuning(), maxThrust: 1.23 };
+
+    expect(parseDroneTuning(serializeDroneTuning(tuning))).toEqual(tuning);
+  });
+
+  it("rejects incomplete tuning configuration files", () => {
+    expect(() => parseDroneTuning('{"maxThrust": 1.23}')).toThrow(
+      "vollständige Drohnen-Konfiguration",
+    );
   });
 
   it("inverts the nonlinear thrust curve for the hover display", () => {
