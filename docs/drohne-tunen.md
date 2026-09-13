@@ -129,6 +129,24 @@ Propeller und Ducts. Er wird mit der aktuellen Motordrehzahl skaliert.
 Bei sehr wenig Gas nimmt dieser Zusatzwiderstand ab. Der vertikale Widerstand
 Y wird von dieser Einstellung nicht verändert.
 
+Die Simulation skaliert den Rotorwiderstand anhand der tatsächlichen
+Rotorlast statt direkt anhand der Stickposition. Dadurch bleiben
+Low-Throttle-Dives frei, während Kurven unter Leistung spürbar stabilisieren.
+
+## Bodeneffekt und Regelautorität
+
+Knapp über dem Hallenboden erzeugen die Ducts ein kleines Druckpolster. Der
+Bodeneffekt erhöht den Schub maximal um 12 %, nimmt innerhalb von ungefähr
+zwei Propellerdurchmessern weich ab und verschwindet bei einer umgedrehten
+Drohne. Landungen und sehr tiefe Passagen benötigen deshalb etwas feinere
+Gaskorrekturen als freier Schwebeflug.
+
+Auch die verfügbare Regelkraft hängt von der aktuellen Motordrehzahl ab. Eine
+kleine Air-Mode-Reserve erhält die Kontrolle im Low-Throttle-Dive; mit
+steigender Drehzahl wächst die Roll-, Pitch- und Yaw-Autorität. Der Regler
+filtert außerdem die gemessene Drehrate, vermeidet D-Term-Schläge bei abrupten
+Stickbewegungen und begrenzt das Aufladen des I-Anteils bei Sättigung.
+
 ### Angularer Drag (0,00–1,00)
 
 Dämpft die Winkelgeschwindigkeit des gesamten Körpers unabhängig vom

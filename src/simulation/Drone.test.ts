@@ -83,6 +83,26 @@ describe("Drone", () => {
     expect(drone.currentMotorThrottle).toBeCloseTo(beforeCut * Math.exp(-1));
   });
 
+  it("adds a modest ground-effect cushion close to the floor", () => {
+    const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    const nearFloor = new Drone(world, TEST_CONFIG, {
+      position: { x: 0, y: 0.02, z: 0 },
+    });
+    const freeAir = new Drone(world, TEST_CONFIG, {
+      position: { x: 1, y: 1, z: 0 },
+    });
+
+    nearFloor.applyThrottle(1, 1);
+    freeAir.applyThrottle(1, 1);
+
+    expect(nearFloor.body.userForce().y).toBeGreaterThan(
+      freeAir.body.userForce().y,
+    );
+    expect(nearFloor.body.userForce().y).toBeLessThanOrEqual(
+      freeAir.body.userForce().y * 1.12,
+    );
+  });
+
   it("resets transform, velocities, forces, and motor state", () => {
     const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
     const drone = new Drone(world, TEST_CONFIG, {

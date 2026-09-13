@@ -68,6 +68,8 @@ export interface DroneSpawn {
 
 const DEFAULT_POSITION = { x: 0, y: 0.15, z: 0 };
 const IDENTITY_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
+const GROUND_EFFECT_HEIGHT = 0.13;
+const MAX_GROUND_EFFECT = 0.12;
 
 /** Owns the physical state and motor model of a quadcopter. */
 export class Drone {
@@ -154,8 +156,9 @@ export class Drone {
       y: 1 - 2 * (rotation.x ** 2 + rotation.z ** 2),
       z: 2 * (rotation.y * rotation.z + rotation.w * rotation.x),
     };
-    const thrust =
+    const freeAirThrust =
       this.motorThrottle ** this.config.thrustExponent * this.config.maxThrust;
+    const thrust = freeAirThrust * this.groundEffectMultiplier(localUp.y);
     this.body.addForce(
       { x: localUp.x * thrust, y: localUp.y * thrust, z: localUp.z * thrust },
       true,
@@ -174,7 +177,11 @@ export class Drone {
     });
     // Propeller/duct drag acts laterally and fades with rotor speed. Keeping
     // vertical body drag small allows realistic, rapid low-throttle descents.
-    const rotor = this.config.rotorDrag * this.motorThrottle;
+    // Induced drag follows rotor loading more closely than the raw throttle
+    // command. This keeps low-throttle dives free while making powered turns
+    // feel planted instead of behaving like a body moving through syrup.
+    const rotorLoad = this.motorThrottle ** this.config.thrustExponent;
+    const rotor = this.config.rotorDrag * rotorLoad;
     const localForce = {
       x:
         -localVelocity.x *
@@ -187,6 +194,19 @@ export class Drone {
         (this.config.bodyDrag.z + rotor),
     };
     this.body.addForce(rotateVector(localForce, rotation), true);
+  }
+
+  /**
+   * Approximates the pressure cushion below a ducted micro quad. The effect is
+   * intentionally small, fades within roughly two prop diameters and only
+   * applies while the craft is upright over the hall floor.
+   */
+  private groundEffectMultiplier(localUpY: number): number {
+    if (localUpY <= 0) return 1;
+    const clearance = Math.max(0, this.body.translation().y - 0.009);
+    if (clearance >= GROUND_EFFECT_HEIGHT) return 1;
+    const proximity = 1 - clearance / GROUND_EFFECT_HEIGHT;
+    return 1 + MAX_GROUND_EFFECT * proximity * proximity * localUpY;
   }
 
   /** Restores the complete spawn state, including stopped motors. */
