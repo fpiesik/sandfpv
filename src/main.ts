@@ -104,6 +104,9 @@ async function start(): Promise<void> {
   document
     .querySelector("#menu-open-tuning")
     ?.addEventListener("click", () => tuningPanel.open(tuning));
+  document
+    .querySelector("#flight-open-tuning")
+    ?.addEventListener("click", () => tuningPanel.open(tuning));
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");

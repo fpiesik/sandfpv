@@ -58,6 +58,33 @@ export function saveDroneTuning(
   storage.setItem(DRONE_TUNING_STORAGE_KEY, JSON.stringify(tuning));
 }
 
+export function serializeDroneTuning(tuning: DroneTuning): string {
+  return `${JSON.stringify(tuning, null, 2)}\n`;
+}
+
+export function parseDroneTuning(contents: string): DroneTuning {
+  const parsed: unknown = JSON.parse(contents);
+  const defaults = cloneDefaultTuning();
+  if (!isNumericShape(parsed, defaults)) {
+    throw new Error(
+      "Die Datei enthält keine vollständige Drohnen-Konfiguration.",
+    );
+  }
+  return parsed;
+}
+
+function isNumericShape(value: unknown, shape: object): value is DroneTuning {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  const record = value as Record<string, unknown>;
+  return Object.entries(shape).every(([key, expected]) => {
+    const actual = record[key];
+    if (typeof expected === "number")
+      return typeof actual === "number" && Number.isFinite(actual);
+    return isNumericShape(actual, expected as object);
+  });
+}
+
 export class DroneTuningPanel {
   constructor(
     private readonly element: HTMLElement,
@@ -95,7 +122,7 @@ export class DroneTuningPanel {
           ${this.field("ki", "PID · I", tuning.ratePid.ki, 0, 0.0002, 0.000005, "")}
           ${this.field("kd", "PID · D", tuning.ratePid.kd, 0, 0.00002, 0.000001, "")}
         </div>
-        <footer><button type="button" data-defaults>WERKSEINSTELLUNG</button><button class="primary" type="button" data-close>FERTIG</button></footer>
+        <footer><div class="tuning-file-actions"><button type="button" data-defaults>WERKSEINSTELLUNG</button><button type="button" data-save-file>LOKAL SPEICHERN</button><button type="button" data-load-file>LOKAL LADEN</button><input type="file" data-file-input accept="application/json,.json" hidden><p class="tuning-file-status" data-file-status aria-live="polite"></p></div><button class="primary" type="button" data-close>FERTIG</button></footer>
       </form>`;
     this.element
       .querySelectorAll("[data-close]")
@@ -109,6 +136,32 @@ export class DroneTuningPanel {
         this.apply(defaults);
         this.render(defaults);
       });
+    this.element
+      .querySelector("[data-save-file]")
+      ?.addEventListener("click", () => this.download(tuning));
+    const fileInput =
+      this.element.querySelector<HTMLInputElement>("[data-file-input]");
+    this.element
+      .querySelector("[data-load-file]")
+      ?.addEventListener("click", () => fileInput?.click());
+    fileInput?.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      try {
+        const imported = parseDroneTuning(await file.text());
+        this.apply(imported);
+        this.render(imported);
+        this.setFileStatus(`„${file.name}“ wurde geladen.`);
+      } catch (error) {
+        this.setFileStatus(
+          error instanceof Error
+            ? error.message
+            : "Die Datei konnte nicht geladen werden.",
+          true,
+        );
+        fileInput.value = "";
+      }
+    });
     this.element.querySelector("form")?.addEventListener("input", (event) => {
       const form = event.currentTarget as HTMLFormElement;
       const data = new FormData(form);
@@ -148,6 +201,26 @@ export class DroneTuningPanel {
         });
       this.apply(next);
     });
+  }
+
+  private download(tuning: DroneTuning): void {
+    const url = URL.createObjectURL(
+      new Blob([serializeDroneTuning(tuning)], { type: "application/json" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sandfpv-air65-tuning.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    this.setFileStatus("Konfiguration wurde lokal gespeichert.");
+  }
+
+  private setFileStatus(message: string, error = false): void {
+    const status =
+      this.element.querySelector<HTMLElement>("[data-file-status]");
+    if (!status) return;
+    status.textContent = message;
+    status.toggleAttribute("data-error", error);
   }
 
   private field(

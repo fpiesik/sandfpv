@@ -5,6 +5,13 @@ Flugregler der simulierten AIR65 unmittelbar. Die Werte werden im Browser
 gespeichert und beim nächsten Start wieder geladen. Mit **Werkseinstellung**
 werden alle Regler auf das AIR65-Standardprofil zurückgesetzt.
 
+Mit **Lokal speichern** wird das aktuelle Setup als lesbare JSON-Datei
+heruntergeladen. Über **Lokal laden** kann eine zuvor gespeicherte vollständige
+Konfiguration wieder eingelesen werden; sie wird sofort angewendet und wie eine
+manuelle Änderung im Browser gespeichert. Die JSON-Datei eignet sich außerdem
+dazu, ein abgestimmtes Profil als neue Werkseinstellung in das Repository zu
+übernehmen.
+
 > **Tipp:** Immer nur einen Wert in kleinen Schritten ändern und anschließend
 > Schwebeflug, schnelle Richtungswechsel sowie Abfangmanöver testen. Mehr ist
 > nicht automatisch besser: Extreme Werte können zu Überschwingen, trägen
