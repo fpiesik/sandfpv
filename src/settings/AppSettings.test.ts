@@ -51,4 +51,17 @@ describe("app settings", () => {
     );
     expect(loadAppSettings(storage)).toEqual(DEFAULT_APP_SETTINGS);
   });
+
+  it("allows FoV values up to 175 degrees", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      APP_SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        settings: { ...DEFAULT_APP_SETTINGS, fov: 200 },
+      }),
+    );
+
+    expect(loadAppSettings(storage).fov).toBe(175);
+  });
 });

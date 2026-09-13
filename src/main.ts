@@ -18,6 +18,8 @@ import { GateCollisionTracker } from "./simulation/GateCollisionTracker";
 import { GateCourse } from "./course/GateCourse";
 import { LapTimer } from "./course/LapTimer";
 import {
+  MAX_FOV,
+  MIN_FOV,
   loadAppSettings,
   saveAppSettings,
   type AppSettings,
@@ -107,6 +109,7 @@ async function start(): Promise<void> {
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
   const cameraAngleReadout =
     document.querySelector<HTMLElement>("#camera-angle");
+  const cameraFovReadout = document.querySelector<HTMLElement>("#camera-fov");
   const crosshair = document.querySelector<HTMLElement>("#crosshair");
   const lessonContainer = document.querySelector<HTMLElement>("#lesson")!;
   let mode: FlightMode = settings.mode;
@@ -205,20 +208,35 @@ async function start(): Promise<void> {
       cameraAngleReadout.textContent = `${settings.cameraAngle}°`;
     saveAppSettings(settings);
   };
+  const setFov = (fov: number): void => {
+    settings = { ...settings, fov: Math.min(MAX_FOV, Math.max(MIN_FOV, fov)) };
+    view.setFpvSettings(settings.cameraAngle, settings.fov);
+    if (cameraFovReadout) cameraFovReadout.textContent = `${settings.fov}°`;
+    saveAppSettings(settings);
+  };
   setCameraAngle(settings.cameraAngle);
+  setFov(settings.fov);
   addEventListener("keydown", (event) => {
     const { code, repeat } = event;
-    const adjustsCameraAngle = code === "ArrowUp" || code === "ArrowDown";
-    if (repeat && !adjustsCameraAngle) return;
+    const adjustsCamera =
+      code === "ArrowUp" ||
+      code === "ArrowDown" ||
+      code === "ArrowLeft" ||
+      code === "ArrowRight";
+    if (repeat && !adjustsCamera) return;
     if (code === "Escape") {
       if (menu.hidden) openMenu();
       else showMenuPage("home");
       return;
     }
     if (!menu.hidden) return;
-    if (adjustsCameraAngle) {
+    if (code === "ArrowUp" || code === "ArrowDown") {
       event.preventDefault();
       setCameraAngle(settings.cameraAngle + (code === "ArrowUp" ? 1 : -1));
+    }
+    if (code === "ArrowLeft" || code === "ArrowRight") {
+      event.preventDefault();
+      setFov(settings.fov + (code === "ArrowRight" ? 1 : -1));
     }
     if (code === "KeyC") toggleCamera();
     if (code === "KeyR") reset();
