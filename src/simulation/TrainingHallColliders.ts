@@ -11,13 +11,16 @@ import {
 export interface TrainingHallColliders {
   readonly gateSensors: readonly RAPIER.Collider[];
   setGateSize(scale: number): void;
+  setEnabled(enabled: boolean): void;
 }
 
 /** Builds static Rapier geometry without knowing anything about rendering. */
 export function createTrainingHallColliders(
   world: RAPIER.World,
 ): TrainingHallColliders {
-  for (const box of [...hallSurfaces, ...obstacles]) createBox(world, box);
+  const environmentColliders = [...hallSurfaces, ...obstacles].map((box) =>
+    createBox(world, box),
+  );
 
   const gateFrames: RAPIER.Collider[][] = [];
   const gateSensors = gates.map((gate) => {
@@ -89,11 +92,16 @@ export function createTrainingHallColliders(
     });
   };
   setGateSize(1);
-  return { gateSensors, setGateSize };
+  const setEnabled = (enabled: boolean): void => {
+    [...environmentColliders, ...gateFrames.flat(), ...gateSensors].forEach(
+      (collider) => collider.setEnabled(enabled),
+    );
+  };
+  return { gateSensors, setGateSize, setEnabled };
 }
 
-function createBox(world: RAPIER.World, box: BoxDefinition): void {
-  world.createCollider(
+function createBox(world: RAPIER.World, box: BoxDefinition): RAPIER.Collider {
+  return world.createCollider(
     RAPIER.ColliderDesc.cuboid(
       ...(box.size.map((size) => size / 2) as [number, number, number]),
     )
