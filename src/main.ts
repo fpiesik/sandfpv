@@ -54,7 +54,7 @@ async function start(): Promise<void> {
     .querySelector("#menu-calibrate")
     ?.addEventListener("click", () => wizard.open());
   let tuning = loadDroneTuning();
-  const { world, drone, gateSensors, setGateSize } =
+  const { world, drone, gateSensors, setGateSize, setEnvironment } =
     await createPhysicsWorld(tuning);
   const gateReadout = document.querySelector<HTMLElement>("#gate-state");
   const lapReadout = document.querySelector<HTMLElement>("#lap-state");
@@ -182,14 +182,13 @@ async function start(): Promise<void> {
     const environment = document.querySelector<HTMLInputElement>(
       'input[name="environment"]:checked',
     )?.value as FlightEnvironment | undefined;
-    view.setEnvironment(environment ?? "training-hall");
+    const selectedEnvironment = environment ?? "training-hall";
+    view.setEnvironment(selectedEnvironment);
+    setEnvironment(selectedEnvironment);
     const track = document.querySelector<HTMLInputElement>(
       'input[name="track"]:checked',
     )?.value;
-    lapTimer.startSession(
-      environment ?? "training-hall",
-      track ?? "five-gates",
-    );
+    lapTimer.startSession(selectedEnvironment, track ?? "five-gates");
     const selected = document.querySelector<HTMLInputElement>(
       'input[name="flight-mode"]:checked',
     )?.value as FlightMode | undefined;

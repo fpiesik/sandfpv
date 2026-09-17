@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import { TrainingHallView } from "./TrainingHallView";
 import { ClassroomView } from "./ClassroomView";
+import { LostPlaceView } from "./LostPlaceView";
+import { LOST_PLACE_ATMOSPHERE } from "../world/LostPlace";
 
-export type FlightEnvironment = "training-hall" | "classroom";
+export type FlightEnvironment = "training-hall" | "classroom" | "lost-place";
 
 export class Scene {
   readonly scene = new THREE.Scene();
@@ -14,6 +16,9 @@ export class Scene {
   private readonly classroom: ClassroomView;
   private readonly hallGroup = new THREE.Group();
   private readonly classroomGroup = new THREE.Group();
+  private readonly lostPlaceGroup = new THREE.Group();
+  private environment: FlightEnvironment = "training-hall";
+  private detailLevel: "low" | "medium" | "high" = "high";
   private fpvActive = true;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -36,8 +41,10 @@ export class Scene {
 
     this.hall = new TrainingHallView(this.hallGroup);
     this.classroom = new ClassroomView(this.classroomGroup);
+    new LostPlaceView(this.lostPlaceGroup);
     this.classroomGroup.visible = false;
-    this.scene.add(this.hallGroup, this.classroomGroup);
+    this.lostPlaceGroup.visible = false;
+    this.scene.add(this.hallGroup, this.classroomGroup, this.lostPlaceGroup);
 
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0x171c19,
@@ -104,6 +111,7 @@ export class Scene {
   setExpectedGate(index: number): void {
     this.hall.setExpectedGate(index);
     this.classroom.setExpectedGate(index);
+    // Lost Place is a free-form freestyle environment and intentionally has no race gates.
   }
 
   clearExpectedGate(): void {
@@ -117,24 +125,38 @@ export class Scene {
   }
 
   setEnvironment(environment: FlightEnvironment): void {
+    this.environment = environment;
     const classroomActive = environment === "classroom";
-    this.hallGroup.visible = !classroomActive;
+    const lostPlaceActive = environment === "lost-place";
+    this.hallGroup.visible = !classroomActive && !lostPlaceActive;
     this.classroomGroup.visible = classroomActive;
-    const atmosphere = classroomActive ? 0xbddde2 : 0x9eb7bd;
+    this.lostPlaceGroup.visible = lostPlaceActive;
+    const atmosphere = lostPlaceActive
+      ? LOST_PLACE_ATMOSPHERE
+      : classroomActive
+        ? 0xbddde2
+        : 0x9eb7bd;
     this.scene.background = new THREE.Color(atmosphere);
-    this.scene.fog = new THREE.Fog(atmosphere, 25, 80);
+    this.scene.fog =
+      this.detailLevel === "high"
+        ? new THREE.Fog(
+            atmosphere,
+            lostPlaceActive ? 32 : 25,
+            lostPlaceActive ? 95 : 80,
+          )
+        : null;
   }
 
   setGraphics(
     resolutionScale: number,
     detailLevel: "low" | "medium" | "high",
   ): void {
+    this.detailLevel = detailLevel;
     this.renderer.setPixelRatio(
       Math.min(devicePixelRatio, 2) * resolutionScale,
     );
     this.renderer.shadowMap.enabled = detailLevel !== "low";
-    this.scene.fog =
-      detailLevel === "high" ? new THREE.Fog(0x9eb7bd, 25, 80) : null;
+    this.setEnvironment(this.environment);
     this.resize();
   }
 
