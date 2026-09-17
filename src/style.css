@@ -335,6 +335,7 @@ canvas {
 .menu-open .stick-visualizer,
 .menu-open .reset-button,
 .menu-open .tuning-button,
+.menu-open .track-options-button,
 .menu-open .crosshair {
   display: none;
 }
@@ -727,6 +728,7 @@ canvas {
 .calibrate-button,
 .reset-button,
 .tuning-button,
+.track-options-button,
 .settings-button {
   position: fixed;
   bottom: 1.5rem;
@@ -747,8 +749,11 @@ canvas {
 .tuning-button {
   bottom: 7.7rem;
 }
-.settings-button {
+.track-options-button {
   bottom: 10.8rem;
+}
+.settings-button {
+  bottom: 13.9rem;
 }
 
 .tuning-panel {
@@ -806,6 +811,9 @@ canvas {
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem 1rem;
   margin: 1rem 0;
+}
+.settings-grid--single {
+  grid-template-columns: 1fr;
 }
 .settings-grid label:not(.settings-check) {
   display: grid;
