@@ -26,6 +26,7 @@ import {
   type FlightMode,
 } from "./settings/AppSettings";
 import { SettingsPanel } from "./settings/SettingsPanel";
+import { TrackOptionsPanel } from "./settings/TrackOptionsPanel";
 import {
   DroneTuningPanel,
   loadDroneTuning,
@@ -97,6 +98,13 @@ async function start(): Promise<void> {
     saveAppSettings(next);
   };
   const settingsPanel = new SettingsPanel(settingsElement, applySettings);
+  const trackOptionsElement =
+    document.querySelector<HTMLElement>("#track-options");
+  if (!trackOptionsElement) throw new Error("Track options panel is missing");
+  const trackOptionsPanel = new TrackOptionsPanel(
+    trackOptionsElement,
+    applySettings,
+  );
   document
     .querySelector("#menu-open-settings")
     ?.addEventListener("click", () => settingsPanel.open(settings));
@@ -107,6 +115,9 @@ async function start(): Promise<void> {
   document
     .querySelector("#flight-open-tuning")
     ?.addEventListener("click", () => tuningPanel.open(tuning));
+  document
+    .querySelector("#flight-open-track-options")
+    ?.addEventListener("click", () => trackOptionsPanel.open(settings));
   const motorReadout = document.querySelector<HTMLElement>("#motor-state");
   const fpsReadout = document.querySelector<HTMLElement>("#fps");
   const cameraMode = document.querySelector<HTMLElement>("#camera-mode");
