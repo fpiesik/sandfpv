@@ -1,4 +1,5 @@
 import RAPIER from "@dimforge/rapier3d-compat";
+import air65IiFreestyleConfig from "../config/air65-ii-freestyle.json";
 
 export interface DroneConfig {
   /** All-up mass in kilograms. */
@@ -43,23 +44,7 @@ export interface DroneConfig {
 }
 
 /** A high-performance 65 mm 1S whoop at approximately 25 g AUW. */
-export const AIR65_II_FREESTYLE_CONFIG: DroneConfig = {
-  mass: 0.025,
-  // With the nonlinear curve, 10:1 peak thrust puts hover near 25% throttle.
-  maxThrust: 0.025 * 9.81 * 10,
-  thrustExponent: 1.65,
-  bodyDrag: { x: 0.018, y: 0.004, z: 0.018 },
-  rotorDrag: 0.035,
-  inertia: { x: 8.5e-6, y: 1.45e-5, z: 8.5e-6 },
-  angularDrag: 0.12,
-  motorSpoolUpTime: 0.045,
-  motorSpoolDownTime: 0.018,
-  maxRates: { roll: 12, pitch: 12, yaw: 8 },
-  rateExpo: 0.65,
-  ratePid: { kp: 0.00012, ki: 0.000025, kd: 0.000002 },
-  integralLimit: 3,
-  maxTorque: 0.003,
-};
+export const AIR65_II_FREESTYLE_CONFIG: DroneConfig = air65IiFreestyleConfig;
 
 export interface DroneSpawn {
   readonly position?: RAPIER.Vector;

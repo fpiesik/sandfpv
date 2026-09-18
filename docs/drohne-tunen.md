@@ -8,9 +8,25 @@ werden alle Regler auf das AIR65-Standardprofil zurückgesetzt.
 Mit **Lokal speichern** wird das aktuelle Setup als lesbare JSON-Datei
 heruntergeladen. Über **Lokal laden** kann eine zuvor gespeicherte vollständige
 Konfiguration wieder eingelesen werden; sie wird sofort angewendet und wie eine
-manuelle Änderung im Browser gespeichert. Die JSON-Datei eignet sich außerdem
-dazu, ein abgestimmtes Profil als neue Werkseinstellung in das Repository zu
-übernehmen.
+manuelle Änderung im Browser gespeichert.
+
+## Export als neue Werkseinstellung übernehmen
+
+Die exportierte Datei hat bereits genau das Format der im Repository
+versionierten Werkseinstellung. So wird ein getestetes Setup zur neuen Vorgabe:
+
+1. Im Tuning-Fenster das gewünschte Setup einstellen und mit **Lokal speichern**
+   als `sandfpv-air65-tuning.json` herunterladen.
+2. Im Repository die Datei `src/config/air65-ii-freestyle.json` durch den
+   Download ersetzen. Der Dateiname im Repository muss dabei erhalten bleiben.
+3. Mit `npm test`, `npm run build`, `npm run lint` und
+   `npm run format:check` prüfen, dass die Konfiguration gültig ist.
+4. Die geänderte JSON-Datei committen. Sie ist damit die Werkseinstellung für
+   neue Browserprofile und für **Werkseinstellung** im Tuning-Fenster.
+
+Bereits im Browser gespeicherte Tunings haben weiterhin Vorrang. Um die neue
+Werkseinstellung dort zu testen, im Tuning-Fenster **Werkseinstellung** wählen;
+ein Löschen des Browser-Speichers ist nicht erforderlich.
 
 > **Tipp:** Immer nur einen Wert in kleinen Schritten ändern und anschließend
 > Schwebeflug, schnelle Richtungswechsel sowie Abfangmanöver testen. Mehr ist
